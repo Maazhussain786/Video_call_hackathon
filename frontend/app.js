@@ -1,13 +1,12 @@
 /**
- * MeetFlow - WebRTC Video Conferencing with Real-time Captions
+ * MeetFlow - WebRTC Video Conferencing
  * 
  * Features:
- * - Join screen with name, passcode, host/participant roles
- * - WebRTC peer-to-peer video call
- * - Screen sharing with face cam visible
- * - Mic/camera toggle
- * - Real-time speech recognition captions
- * - Instant translation
+ * - Host meeting options (initial participant mic/cam state)
+ * - Host remote control of participant media
+ * - Chat messaging
+ * - Auto-scrolling captions with translation
+ * - Screen sharing with face cam
  */
 
 // ============================================================
@@ -18,12 +17,13 @@ const API_BASE = `http://${HOST}:8001`;
 const WS_BASE = `ws://${HOST}:8001`;
 
 // ============================================================
-// State Variables
+// State
 // ============================================================
 let userName = "";
 let roomId = "";
 let meetingPasscode = "";
 let role = "host";
+let isHost = false;
 let hostJoined = false;
 let isCallActive = false;
 let peerName = "";
@@ -40,16 +40,19 @@ let isCameraOff = false;
 let isScreenSharing = false;
 let screenStream = null;
 
+// Host options
+let participantMicInitiallyMuted = false;
+let participantCamInitiallyOff = false;
+
 // Speech recognition
 let recognition = null;
 
-// Meeting timer
+// Timer
 let meetingStartTime = null;
 let timerInterval = null;
 
-// Translation - optimized for speed
+// Translation cache
 const translationCache = new Map();
-let pendingTranslations = new Map();
 
 // ============================================================
 // DOM Elements
@@ -63,6 +66,9 @@ const hostBtn = document.getElementById("hostBtn");
 const participantBtn = document.getElementById("participantBtn");
 const joinBtn = document.getElementById("joinBtn");
 const joinError = document.getElementById("joinError");
+const hostOptions = document.getElementById("hostOptions");
+const optMicMuted = document.getElementById("optMicMuted");
+const optCamOff = document.getElementById("optCamOff");
 
 const localVideo = document.getElementById("localVideo");
 const remoteVideo = document.getElementById("remoteVideo");
@@ -81,19 +87,29 @@ const micBtn = document.getElementById("micBtn");
 const cameraBtn = document.getElementById("cameraBtn");
 const screenBtn = document.getElementById("screenBtn");
 const leaveBtn = document.getElementById("leaveBtn");
+const chatToggleBtn = document.getElementById("chatToggleBtn");
 const spokenLangSelect = document.getElementById("spokenLang");
 const translateToSelect = document.getElementById("translateTo");
 
-const captionsBody = document.getElementById("captionsBody");
-const myCaptionItem = document.getElementById("myCaptionItem");
-const peerCaptionItem = document.getElementById("peerCaptionItem");
-const myCaptionDiv = document.getElementById("myCaption");
-const myTranslationDiv = document.getElementById("myTranslation");
-const peerCaptionDiv = document.getElementById("peerCaption");
-const peerTranslationDiv = document.getElementById("peerTranslation");
-const peerCaptionName = document.getElementById("peerCaptionName");
+// Sidebar
+const sidebarTabs = document.querySelectorAll(".sidebar-tab");
+const captionsPanel = document.getElementById("captionsPanel");
+const chatPanel = document.getElementById("chatPanel");
+const captionsList = document.getElementById("captionsList");
+const captionInterim = document.getElementById("captionInterim");
+const chatMessages = document.getElementById("chatMessages");
+const chatInput = document.getElementById("chatInput");
+const chatSendBtn = document.getElementById("chatSendBtn");
+
+// Host controls
+const hostControlsPanel = document.getElementById("hostControlsPanel");
+const ctrlMuteMic = document.getElementById("ctrlMuteMic");
+const ctrlUnmuteMic = document.getElementById("ctrlUnmuteMic");
+const ctrlDisableCam = document.getElementById("ctrlDisableCam");
+const ctrlEnableCam = document.getElementById("ctrlEnableCam");
 
 const toast = document.getElementById("toast");
+const hostBanner = document.getElementById("hostBanner");
 
 // ============================================================
 // Role Selection
@@ -102,12 +118,35 @@ hostBtn.addEventListener("click", () => {
     role = "host";
     hostBtn.classList.add("selected");
     participantBtn.classList.remove("selected");
+    hostOptions.classList.add("show");
 });
 
 participantBtn.addEventListener("click", () => {
     role = "participant";
     participantBtn.classList.add("selected");
     hostBtn.classList.remove("selected");
+    hostOptions.classList.remove("show");
+});
+
+// ============================================================
+// Sidebar Tabs
+// ============================================================
+sidebarTabs.forEach(tab => {
+    tab.addEventListener("click", () => {
+        sidebarTabs.forEach(t => t.classList.remove("active"));
+        tab.classList.add("active");
+        
+        const tabName = tab.dataset.tab;
+        captionsPanel.classList.toggle("active", tabName === "captions");
+        chatPanel.classList.toggle("active", tabName === "chat");
+    });
+});
+
+chatToggleBtn.addEventListener("click", () => {
+    sidebarTabs.forEach(t => t.classList.remove("active"));
+    document.querySelector('[data-tab="chat"]').classList.add("active");
+    captionsPanel.classList.remove("active");
+    chatPanel.classList.add("active");
 });
 
 // ============================================================
@@ -121,6 +160,10 @@ joinBtn.addEventListener("click", async () => {
     if (!userName) return showJoinError("Please enter your name");
     if (!roomId) return showJoinError("Please enter a meeting ID");
     if (!meetingPasscode) return showJoinError("Please enter a passcode");
+    
+    // Get host options
+    participantMicInitiallyMuted = optMicMuted.checked;
+    participantCamInitiallyOff = optCamOff.checked;
     
     joinBtn.disabled = true;
     joinBtn.textContent = "Connecting...";
@@ -144,7 +187,6 @@ function showJoinError(msg) {
 // Connect to Meeting
 // ============================================================
 async function connectToMeeting() {
-    // Get media
     try {
         localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
         localVideo.srcObject = localStream;
@@ -157,23 +199,21 @@ async function connectToMeeting() {
         ws = new WebSocket(`${WS_BASE}/ws/${roomId}`);
         
         ws.onopen = () => {
+            // Send join message with host options
             ws.send(JSON.stringify({
                 type: "join",
                 name: userName,
                 role: role,
                 roomId: roomId,
-                passcode: meetingPasscode
+                passcode: meetingPasscode,
+                participantMicInitiallyMuted: participantMicInitiallyMuted,
+                participantCamInitiallyOff: participantCamInitiallyOff
             }));
         };
         
         ws.onmessage = (e) => handleMessage(JSON.parse(e.data), resolve, reject);
         ws.onerror = () => reject(new Error("Connection failed"));
-        ws.onclose = () => {
-            if (isCallActive) {
-                showToast("Disconnected");
-                leaveMeeting();
-            }
-        };
+        ws.onclose = () => { if (isCallActive) { showToast("Disconnected"); leaveMeeting(); } };
     });
 }
 
@@ -183,8 +223,20 @@ async function connectToMeeting() {
 async function handleMessage(data, resolve, reject) {
     switch (data.type) {
         case "join-accepted":
-            hostJoined = data.isHost || role === "host";
+            isHost = data.isHost;
+            hostJoined = isHost || role === "host";
             isCallActive = true;
+            
+            // Apply initial media state for participants
+            if (!isHost && data.participantMicInitiallyMuted) {
+                applyMute(true);
+                showHostBanner("Host has muted your microphone");
+            }
+            if (!isHost && data.participantCamInitiallyOff) {
+                applyCameraOff(true);
+                showHostBanner("Host has turned off your camera");
+            }
+            
             showMeetingScreen();
             startMeetingTimer();
             startSpeechRecognition();
@@ -213,8 +265,6 @@ async function handleMessage(data, resolve, reject) {
         case "peer-joined":
             peerName = data.name || "Participant";
             remoteNameBadge.querySelector("span").textContent = peerName;
-            peerCaptionName.textContent = peerName;
-            peerCaptionItem.style.display = "block";
             participantCount.textContent = "2";
             waitingMessage.style.display = "none";
             showToast(`${peerName} joined`);
@@ -228,7 +278,6 @@ async function handleMessage(data, resolve, reject) {
             remoteVideo.srcObject = null;
             remoteNameBadge.querySelector("span").textContent = "Waiting...";
             waitingMessage.style.display = "flex";
-            peerCaptionItem.style.display = "none";
             if (pc) { pc.close(); pc = null; }
             break;
             
@@ -246,8 +295,6 @@ async function handleMessage(data, resolve, reject) {
             if (data.senderName) {
                 peerName = data.senderName;
                 remoteNameBadge.querySelector("span").textContent = peerName;
-                peerCaptionName.textContent = peerName;
-                peerCaptionItem.style.display = "block";
             }
             break;
             
@@ -264,7 +311,67 @@ async function handleMessage(data, resolve, reject) {
         case "caption":
             handlePeerCaption(data);
             break;
+            
+        // --------------------------------------------------------
+        // HOST CONTROL - Participant receives control commands
+        // --------------------------------------------------------
+        case "host-control":
+            handleHostControl(data.action);
+            break;
+            
+        // --------------------------------------------------------
+        // CHAT - Receive chat messages
+        // --------------------------------------------------------
+        case "chat":
+            addChatMessage(data.from, data.text, data.timestamp, data.from === userName);
+            break;
     }
+}
+
+// ============================================================
+// Host Control Handler (for participants)
+// Note: This is for hackathon demo only - not production secure
+// ============================================================
+function handleHostControl(action) {
+    switch (action) {
+        case "mute-mic":
+            applyMute(true);
+            showHostBanner("Host muted your microphone");
+            break;
+        case "unmute-mic":
+            applyMute(false);
+            showHostBanner("Host unmuted your microphone");
+            break;
+        case "disable-camera":
+            applyCameraOff(true);
+            showHostBanner("Host turned off your camera");
+            break;
+        case "enable-camera":
+            applyCameraOff(false);
+            showHostBanner("Host turned on your camera");
+            break;
+    }
+}
+
+function applyMute(muted) {
+    isMuted = muted;
+    localStream?.getAudioTracks().forEach(t => t.enabled = !muted);
+    micBtn.className = `control-btn ${muted ? 'muted' : 'default'}`;
+    micBtn.innerHTML = `<i class="fas fa-microphone${muted ? '-slash' : ''}"></i>`;
+    localMicStatus.style.display = muted ? "inline" : "none";
+}
+
+function applyCameraOff(off) {
+    isCameraOff = off;
+    localStream?.getVideoTracks().forEach(t => t.enabled = !off);
+    cameraBtn.className = `control-btn ${off ? 'muted' : 'default'}`;
+    cameraBtn.innerHTML = `<i class="fas fa-video${off ? '-slash' : ''}"></i>`;
+}
+
+function showHostBanner(msg) {
+    hostBanner.textContent = msg;
+    hostBanner.classList.add("show");
+    setTimeout(() => hostBanner.classList.remove("show"), 3000);
 }
 
 // ============================================================
@@ -277,10 +384,30 @@ function showMeetingScreen() {
     meetingIdDisplay.textContent = roomId;
     joinBtn.disabled = false;
     joinBtn.textContent = "Join Meeting";
+    
+    // Show host controls panel only for host
+    if (isHost) {
+        hostControlsPanel.classList.add("show");
+    }
 }
 
 // ============================================================
-// WebRTC Peer Connection
+// Host Control Buttons
+// ============================================================
+ctrlMuteMic.addEventListener("click", () => sendHostControl("mute-mic"));
+ctrlUnmuteMic.addEventListener("click", () => sendHostControl("unmute-mic"));
+ctrlDisableCam.addEventListener("click", () => sendHostControl("disable-camera"));
+ctrlEnableCam.addEventListener("click", () => sendHostControl("enable-camera"));
+
+function sendHostControl(action) {
+    if (ws?.readyState === WebSocket.OPEN && isHost) {
+        ws.send(JSON.stringify({ type: "host-control", action }));
+        showToast(`Sent: ${action.replace('-', ' ')}`);
+    }
+}
+
+// ============================================================
+// WebRTC
 // ============================================================
 function createPeerConnection() {
     if (pc) return;
@@ -327,39 +454,25 @@ function startMeetingTimer() {
 // Controls
 // ============================================================
 micBtn.addEventListener("click", () => {
-    isMuted = !isMuted;
-    localStream.getAudioTracks().forEach(t => t.enabled = !isMuted);
-    
-    micBtn.className = `control-btn ${isMuted ? 'muted' : 'default'}`;
-    micBtn.innerHTML = `<i class="fas fa-microphone${isMuted ? '-slash' : ''}"></i>`;
-    localMicStatus.style.display = isMuted ? "inline" : "none";
+    applyMute(!isMuted);
     showToast(isMuted ? "Muted" : "Unmuted");
 });
 
 cameraBtn.addEventListener("click", () => {
-    isCameraOff = !isCameraOff;
-    localStream.getVideoTracks().forEach(t => t.enabled = !isCameraOff);
-    
-    cameraBtn.className = `control-btn ${isCameraOff ? 'muted' : 'default'}`;
-    cameraBtn.innerHTML = `<i class="fas fa-video${isCameraOff ? '-slash' : ''}"></i>`;
+    applyCameraOff(!isCameraOff);
     showToast(isCameraOff ? "Camera off" : "Camera on");
 });
 
-// Screen Share with Face Cam
 screenBtn.addEventListener("click", async () => {
     if (!isScreenSharing) {
         try {
             screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
             const screenTrack = screenStream.getVideoTracks()[0];
             
-            // Replace track in peer connection
             const sender = pc?.getSenders().find(s => s.track?.kind === "video");
             if (sender) await sender.replaceTrack(screenTrack);
             
-            // Show screen in main local video
             localVideo.srcObject = screenStream;
-            
-            // Show face cam in small PiP
             faceCamVideo.srcObject = localStream;
             faceCamWrapper.style.display = "block";
             
@@ -379,7 +492,6 @@ screenBtn.addEventListener("click", async () => {
 
 function stopScreenShare() {
     if (!isScreenSharing) return;
-    
     screenStream?.getTracks().forEach(t => t.stop());
     screenStream = null;
     
@@ -395,7 +507,6 @@ function stopScreenShare() {
     showToast("Screen share stopped");
 }
 
-// Leave Meeting
 leaveBtn.addEventListener("click", leaveMeeting);
 
 function leaveMeeting() {
@@ -414,8 +525,8 @@ function leaveMeeting() {
     
     localVideo.srcObject = remoteVideo.srcObject = null;
     
-    // Reset UI
-    isMuted = isCameraOff = isScreenSharing = false;
+    // Reset states
+    isMuted = isCameraOff = isScreenSharing = isHost = false;
     micBtn.className = "control-btn default";
     micBtn.innerHTML = '<i class="fas fa-microphone"></i>';
     cameraBtn.className = "control-btn default";
@@ -423,10 +534,12 @@ function leaveMeeting() {
     screenBtn.className = "control-btn default";
     localMicStatus.style.display = "none";
     faceCamWrapper.style.display = "none";
+    hostControlsPanel.classList.remove("show");
     
-    myCaptionDiv.textContent = "Speak to see captions...";
-    myTranslationDiv.textContent = "";
-    peerCaptionItem.style.display = "none";
+    // Clear captions and chat
+    captionsList.innerHTML = "";
+    captionInterim.textContent = "";
+    chatMessages.innerHTML = "";
     waitingMessage.style.display = "flex";
     
     meetingScreen.classList.remove("active");
@@ -434,7 +547,50 @@ function leaveMeeting() {
 }
 
 // ============================================================
-// Speech Recognition - Optimized for Real-time
+// Chat
+// ============================================================
+chatSendBtn.addEventListener("click", sendChat);
+chatInput.addEventListener("keypress", (e) => { if (e.key === "Enter") sendChat(); });
+
+function sendChat() {
+    const text = chatInput.value.trim();
+    if (!text || !ws || ws.readyState !== WebSocket.OPEN) return;
+    
+    ws.send(JSON.stringify({
+        type: "chat",
+        from: userName,
+        text: text,
+        timestamp: Date.now()
+    }));
+    
+    chatInput.value = "";
+}
+
+function addChatMessage(from, text, timestamp, isMine) {
+    const time = new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    
+    const msg = document.createElement("div");
+    msg.className = `chat-msg ${isMine ? 'mine' : ''}`;
+    msg.innerHTML = `
+        <div class="chat-msg-header">
+            <span class="chat-msg-name">${from}</span>
+            <span class="chat-msg-time">${time}</span>
+        </div>
+        <div class="chat-msg-text">${escapeHtml(text)}</div>
+    `;
+    
+    chatMessages.appendChild(msg);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+function escapeHtml(text) {
+    const div = document.createElement("div");
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// ============================================================
+// Speech Recognition - Auto-scrolling captions
 // ============================================================
 function startSpeechRecognition() {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -445,8 +601,6 @@ function startSpeechRecognition() {
     recognition.continuous = true;
     recognition.interimResults = true;
     
-    let lastInterim = "";
-    
     recognition.onresult = (e) => {
         let interim = "", final = "";
         
@@ -456,31 +610,26 @@ function startSpeechRecognition() {
             else interim += t;
         }
         
-        // Show interim results immediately (real-time feel)
-        if (interim && interim !== lastInterim) {
-            myCaptionDiv.textContent = interim;
-            myCaptionDiv.style.opacity = "0.7";
-            lastInterim = interim;
+        // Show interim results
+        if (interim) {
+            captionInterim.textContent = interim;
+            captionInterim.style.display = "block";
         }
         
         // Process final results
         if (final) {
-            myCaptionDiv.textContent = final;
-            myCaptionDiv.style.opacity = "1";
-            lastInterim = "";
+            captionInterim.style.display = "none";
+            captionInterim.textContent = "";
             
-            // Send to peer immediately
+            // Send to peer
             ws?.readyState === WebSocket.OPEN && ws.send(JSON.stringify({
                 type: "caption",
                 text: final,
                 sourceLang: spokenLangSelect.value.split("-")[0]
             }));
             
-            // Translate in parallel (non-blocking)
-            translateAsync(final, "my");
-            
-            // Scroll captions
-            captionsBody.scrollTop = captionsBody.scrollHeight;
+            // Add caption line with translation
+            addCaptionLine(final, userName, true);
         }
     };
     
@@ -500,44 +649,43 @@ spokenLangSelect.addEventListener("change", () => {
 });
 
 // ============================================================
-// Handle Peer Caption
+// Captions - Auto-scrolling list
 // ============================================================
+async function addCaptionLine(original, speaker, isMine) {
+    const sourceLang = spokenLangSelect.value.split("-")[0];
+    const targetLang = translateToSelect.value;
+    
+    const line = document.createElement("div");
+    line.className = `caption-line ${isMine ? 'mine' : 'peer'}`;
+    line.innerHTML = `
+        <div class="caption-speaker">${speaker}</div>
+        <div class="caption-original">${escapeHtml(original)}</div>
+        <div class="caption-translated"></div>
+    `;
+    
+    captionsList.appendChild(line);
+    captionsList.scrollTop = captionsList.scrollHeight;
+    
+    // Translate if needed
+    if (sourceLang !== targetLang) {
+        const translatedDiv = line.querySelector(".caption-translated");
+        translatedDiv.textContent = "...";
+        
+        const translated = await translateText(original, sourceLang, targetLang);
+        translatedDiv.textContent = translated;
+    }
+}
+
 function handlePeerCaption(data) {
-    peerCaptionDiv.textContent = data.text;
-    peerCaptionItem.style.display = "block";
-    
-    // Translate in parallel
-    translateAsync(data.text, "peer", data.sourceLang || "en");
-    
-    captionsBody.scrollTop = captionsBody.scrollHeight;
+    addCaptionLine(data.text, data.senderName || peerName || "Peer", false);
 }
 
 // ============================================================
-// Translation - Optimized for Speed
+// Translation
 // ============================================================
-async function translateAsync(text, target, sourceLang = null) {
-    const src = sourceLang || spokenLangSelect.value.split("-")[0];
-    const tgt = translateToSelect.value;
-    
-    if (src === tgt) {
-        if (target === "my") myTranslationDiv.textContent = "";
-        else peerTranslationDiv.textContent = "";
-        return;
-    }
-    
-    const cacheKey = `${text}|${src}|${tgt}`;
-    
-    // Check cache first (instant)
-    if (translationCache.has(cacheKey)) {
-        const translated = translationCache.get(cacheKey);
-        if (target === "my") myTranslationDiv.textContent = translated;
-        else peerTranslationDiv.textContent = translated;
-        return;
-    }
-    
-    // Show loading indicator
-    const targetDiv = target === "my" ? myTranslationDiv : peerTranslationDiv;
-    targetDiv.textContent = "...";
+async function translateText(text, sourceLang, targetLang) {
+    const cacheKey = `${text}|${sourceLang}|${targetLang}`;
+    if (translationCache.has(cacheKey)) return translationCache.get(cacheKey);
     
     try {
         const controller = new AbortController();
@@ -546,23 +694,21 @@ async function translateAsync(text, target, sourceLang = null) {
         const res = await fetch(`${API_BASE}/translate`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ text, source_lang: src, target_lang: tgt }),
+            body: JSON.stringify({ text, source_lang: sourceLang, target_lang: targetLang }),
             signal: controller.signal
         });
         
         const data = await res.json();
         const translated = data.translated || text;
         
-        // Cache result
         translationCache.set(cacheKey, translated);
         if (translationCache.size > 300) {
-            const first = translationCache.keys().next().value;
-            translationCache.delete(first);
+            translationCache.delete(translationCache.keys().next().value);
         }
         
-        targetDiv.textContent = translated;
+        return translated;
     } catch {
-        targetDiv.textContent = "";
+        return text;
     }
 }
 

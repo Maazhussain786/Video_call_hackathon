@@ -22,16 +22,13 @@
       --border: #333333;
       --success: #22c55e;
       --warning: #f59e0b;
+      --blue: #3b82f6;
     }
 
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
 
     body {
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-family: 'Inter', -apple-system, sans-serif;
       background: var(--bg-primary);
       color: var(--text-primary);
       min-height: 100vh;
@@ -44,595 +41,291 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      background: 
-        radial-gradient(ellipse at top left, rgba(0, 168, 132, 0.1) 0%, transparent 50%),
-        radial-gradient(ellipse at bottom right, rgba(59, 130, 246, 0.08) 0%, transparent 50%),
-        var(--bg-primary);
+      background: radial-gradient(ellipse at top left, rgba(0, 168, 132, 0.1) 0%, transparent 50%),
+                  radial-gradient(ellipse at bottom right, rgba(59, 130, 246, 0.08) 0%, transparent 50%),
+                  var(--bg-primary);
     }
 
-    .join-container {
-      display: flex;
-      gap: 60px;
-      align-items: center;
-      max-width: 900px;
-      padding: 40px;
-    }
-
-    .join-branding {
-      flex: 1;
-    }
-
-    .join-branding .logo {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      margin-bottom: 24px;
-    }
-
+    .join-container { display: flex; gap: 60px; align-items: center; max-width: 950px; padding: 40px; }
+    .join-branding { flex: 1; }
+    .join-branding .logo { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; }
     .join-branding .logo-icon {
-      width: 48px;
-      height: 48px;
-      background: linear-gradient(135deg, var(--accent), #3b82f6);
+      width: 48px; height: 48px;
+      background: linear-gradient(135deg, var(--accent), var(--blue));
       border-radius: 12px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      display: flex; align-items: center; justify-content: center;
       font-size: 1.5rem;
     }
-
     .join-branding .logo-text {
-      font-size: 1.75rem;
-      font-weight: 700;
-      background: linear-gradient(135deg, var(--accent), #3b82f6);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
+      font-size: 1.75rem; font-weight: 700;
+      background: linear-gradient(135deg, var(--accent), var(--blue));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
     }
-
-    .join-branding h2 {
-      font-size: 2.5rem;
-      font-weight: 600;
-      line-height: 1.2;
-      margin-bottom: 16px;
-    }
-
-    .join-branding p {
-      color: var(--text-secondary);
-      font-size: 1.1rem;
-      line-height: 1.6;
-    }
+    .join-branding h2 { font-size: 2.5rem; font-weight: 600; line-height: 1.2; margin-bottom: 16px; }
+    .join-branding p { color: var(--text-secondary); font-size: 1.1rem; line-height: 1.6; }
 
     .join-card {
       background: var(--bg-secondary);
       border: 1px solid var(--border);
       border-radius: 20px;
-      padding: 36px;
-      width: 380px;
+      padding: 32px;
+      width: 400px;
     }
+    .join-card h3 { font-size: 1.2rem; font-weight: 600; margin-bottom: 24px; text-align: center; }
 
-    .join-card h3 {
-      font-size: 1.25rem;
-      font-weight: 600;
-      margin-bottom: 28px;
-      text-align: center;
-    }
-
-    .form-group {
-      margin-bottom: 20px;
-    }
-
+    .form-group { margin-bottom: 18px; }
     .form-group label {
-      display: block;
-      font-size: 0.8rem;
-      font-weight: 500;
-      color: var(--text-secondary);
-      margin-bottom: 8px;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
+      display: block; font-size: 0.75rem; font-weight: 500;
+      color: var(--text-secondary); margin-bottom: 6px;
+      text-transform: uppercase; letter-spacing: 0.5px;
     }
-
     .form-group input {
-      width: 100%;
-      padding: 14px 16px;
-      border-radius: 10px;
-      border: 1px solid var(--border);
-      background: var(--bg-tertiary);
-      color: var(--text-primary);
-      font-size: 0.95rem;
-      transition: all 0.2s;
+      width: 100%; padding: 12px 14px; border-radius: 8px;
+      border: 1px solid var(--border); background: var(--bg-tertiary);
+      color: var(--text-primary); font-size: 0.9rem; transition: all 0.2s;
     }
+    .form-group input:focus { outline: none; border-color: var(--accent); }
+    .form-group input::placeholder { color: var(--text-muted); }
 
-    .form-group input:focus {
-      outline: none;
-      border-color: var(--accent);
-      box-shadow: 0 0 0 3px rgba(0, 168, 132, 0.15);
-    }
-
-    .form-group input::placeholder {
-      color: var(--text-muted);
-    }
-
-    .role-selector {
-      display: flex;
-      gap: 10px;
-      margin-bottom: 24px;
-    }
-
+    .role-selector { display: flex; gap: 10px; margin-bottom: 16px; }
     .role-btn {
-      flex: 1;
-      padding: 12px 16px;
-      border-radius: 10px;
-      border: 2px solid var(--border);
-      background: transparent;
-      color: var(--text-secondary);
-      font-size: 0.9rem;
-      font-weight: 500;
-      cursor: pointer;
-      transition: all 0.2s;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
+      flex: 1; padding: 10px 14px; border-radius: 8px;
+      border: 2px solid var(--border); background: transparent;
+      color: var(--text-secondary); font-size: 0.85rem; font-weight: 500;
+      cursor: pointer; transition: all 0.2s;
+      display: flex; align-items: center; justify-content: center; gap: 6px;
     }
+    .role-btn:hover { border-color: var(--accent); color: var(--text-primary); }
+    .role-btn.selected { border-color: var(--accent); background: rgba(0, 168, 132, 0.15); color: var(--accent); }
 
-    .role-btn:hover {
-      border-color: var(--accent);
-      color: var(--text-primary);
-    }
-
-    .role-btn.selected {
-      border-color: var(--accent);
-      background: rgba(0, 168, 132, 0.15);
-      color: var(--accent);
-    }
-
-    .join-btn {
-      width: 100%;
-      padding: 14px;
-      border-radius: 10px;
-      border: none;
-      background: linear-gradient(135deg, var(--accent), #00c49a);
-      color: white;
-      font-size: 0.95rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-
-    .join-btn:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 8px 24px rgba(0, 168, 132, 0.3);
-    }
-
-    .join-btn:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
-      transform: none;
-    }
-
-    .error-msg {
-      background: rgba(239, 68, 68, 0.1);
-      border: 1px solid var(--danger);
-      color: #fca5a5;
-      padding: 12px 16px;
+    /* Host Options */
+    .host-options {
+      background: var(--bg-tertiary);
       border-radius: 8px;
-      margin-bottom: 16px;
-      font-size: 0.85rem;
+      padding: 14px;
+      margin-bottom: 18px;
       display: none;
     }
+    .host-options.show { display: block; }
+    .host-options-title {
+      font-size: 0.75rem; font-weight: 600;
+      color: var(--text-muted); margin-bottom: 10px;
+      text-transform: uppercase; letter-spacing: 0.5px;
+    }
+    .checkbox-group { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; cursor: pointer; }
+    .checkbox-group:last-child { margin-bottom: 0; }
+    .checkbox-group input[type="checkbox"] {
+      width: 16px; height: 16px; accent-color: var(--accent); cursor: pointer;
+    }
+    .checkbox-group span { font-size: 0.85rem; color: var(--text-secondary); }
 
+    .join-btn {
+      width: 100%; padding: 14px; border-radius: 10px; border: none;
+      background: linear-gradient(135deg, var(--accent), #00c49a);
+      color: white; font-size: 0.95rem; font-weight: 600;
+      cursor: pointer; transition: all 0.2s;
+    }
+    .join-btn:hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(0, 168, 132, 0.3); }
+    .join-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+    .error-msg {
+      background: rgba(239, 68, 68, 0.1); border: 1px solid var(--danger);
+      color: #fca5a5; padding: 10px 14px; border-radius: 8px;
+      margin-bottom: 14px; font-size: 0.85rem; display: none;
+    }
     .error-msg.show { display: block; }
 
     /* ==================== MEETING SCREEN ==================== */
-    .meeting-screen {
-      display: none;
-      flex-direction: column;
-      height: 100vh;
-      background: var(--bg-primary);
-    }
-
+    .meeting-screen { display: none; flex-direction: column; height: 100vh; }
     .meeting-screen.active { display: flex; }
 
     /* Header */
     .meeting-header {
-      height: 56px;
-      background: var(--bg-secondary);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0 20px;
-      border-bottom: 1px solid var(--border);
+      height: 52px; background: var(--bg-secondary);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 16px; border-bottom: 1px solid var(--border);
     }
-
-    .header-left {
-      display: flex;
-      align-items: center;
-      gap: 16px;
+    .header-left, .header-right { display: flex; align-items: center; gap: 12px; }
+    .header-logo { display: flex; align-items: center; gap: 6px; font-weight: 600; color: var(--accent); font-size: 0.9rem; }
+    .info-badge {
+      display: flex; align-items: center; gap: 6px;
+      background: var(--bg-tertiary); padding: 5px 10px; border-radius: 6px; font-size: 0.8rem;
     }
+    .info-badge i { color: var(--text-muted); font-size: 0.75rem; }
+    .live-indicator { display: flex; align-items: center; gap: 5px; font-size: 0.75rem; color: var(--danger); font-weight: 600; }
+    .live-dot { width: 6px; height: 6px; background: var(--danger); border-radius: 50%; animation: pulse 1.5s infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
 
-    .header-logo {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-weight: 600;
-      color: var(--accent);
-    }
-
-    .meeting-info-badge {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      background: var(--bg-tertiary);
-      padding: 6px 12px;
-      border-radius: 6px;
-      font-size: 0.85rem;
-    }
-
-    .meeting-info-badge i { color: var(--text-muted); }
-
-    .header-right {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-
-    .participant-badge {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 0.85rem;
-      color: var(--text-secondary);
-    }
-
-    .live-indicator {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 0.8rem;
-      color: var(--danger);
-      font-weight: 500;
-    }
-
-    .live-dot {
-      width: 8px;
-      height: 8px;
-      background: var(--danger);
-      border-radius: 50%;
-      animation: pulse 1.5s infinite;
-    }
-
-    @keyframes pulse {
-      0%, 100% { opacity: 1; transform: scale(1); }
-      50% { opacity: 0.7; transform: scale(1.1); }
-    }
+    /* Main Area */
+    .meeting-main { flex: 1; display: flex; overflow: hidden; }
 
     /* Video Area */
-    .video-area {
-      flex: 1;
-      display: flex;
-      padding: 16px;
-      gap: 16px;
-      background: var(--bg-primary);
-      position: relative;
-    }
+    .video-area { flex: 1; display: flex; align-items: center; justify-content: center; padding: 16px; position: relative; }
+    .main-video-container { position: relative; width: 100%; max-width: 900px; }
+    .video-wrapper { position: relative; border-radius: 12px; overflow: hidden; background: var(--bg-tertiary); }
+    .video-wrapper video { display: block; background: #000; object-fit: cover; }
+    .video-wrapper.main { width: 100%; aspect-ratio: 16/9; }
+    .video-wrapper.main video { width: 100%; height: 100%; }
 
-    .main-video-container {
-      flex: 1;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      position: relative;
-    }
-
-    .video-wrapper {
-      position: relative;
-      border-radius: 16px;
-      overflow: hidden;
-      background: var(--bg-tertiary);
-    }
-
-    .video-wrapper video {
-      display: block;
-      background: #000;
-      object-fit: cover;
-    }
-
-    .video-wrapper.main {
-      width: 100%;
-      max-width: 1100px;
-      aspect-ratio: 16/9;
-    }
-
-    .video-wrapper.main video {
-      width: 100%;
-      height: 100%;
-    }
-
-    /* Self View (floating) */
-    .self-view-container {
-      position: absolute;
-      right: 20px;
-      bottom: 20px;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      z-index: 20;
-    }
-
-    .video-wrapper.self {
-      width: 200px;
-      border: 2px solid var(--border);
-      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
-    }
-
-    .video-wrapper.self video {
-      width: 100%;
-      height: 130px;
-    }
-
-    /* Screen share face cam */
-    .video-wrapper.face-cam {
-      width: 140px;
-      border: 2px solid var(--accent);
-    }
-
-    .video-wrapper.face-cam video {
-      width: 100%;
-      height: 90px;
-    }
+    .self-view-container { position: absolute; right: 16px; bottom: 16px; display: flex; flex-direction: column; gap: 6px; z-index: 10; }
+    .video-wrapper.self { width: 180px; border: 2px solid var(--border); box-shadow: 0 4px 20px rgba(0,0,0,0.4); }
+    .video-wrapper.self video { width: 100%; height: 110px; }
+    .video-wrapper.face-cam { width: 120px; border: 2px solid var(--accent); }
+    .video-wrapper.face-cam video { width: 100%; height: 75px; }
 
     .name-badge {
-      position: absolute;
-      bottom: 10px;
-      left: 10px;
-      background: rgba(0, 0, 0, 0.75);
-      padding: 5px 10px;
-      border-radius: 6px;
-      font-size: 0.8rem;
-      color: white;
-      backdrop-filter: blur(8px);
-      display: flex;
-      align-items: center;
-      gap: 6px;
+      position: absolute; bottom: 8px; left: 8px;
+      background: rgba(0, 0, 0, 0.75); padding: 4px 8px; border-radius: 4px;
+      font-size: 0.75rem; color: white; backdrop-filter: blur(4px);
+      display: flex; align-items: center; gap: 4px;
     }
-
-    .name-badge .mic-status {
-      color: var(--danger);
-      font-size: 0.7rem;
-    }
+    .name-badge .mic-status { color: var(--danger); font-size: 0.65rem; }
 
     .waiting-overlay {
-      position: absolute;
-      inset: 0;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      background: var(--bg-tertiary);
-      border-radius: 16px;
+      position: absolute; inset: 0;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      background: var(--bg-tertiary); border-radius: 12px;
+    }
+    .waiting-overlay i { font-size: 2.5rem; color: var(--text-muted); margin-bottom: 12px; }
+    .waiting-overlay p { color: var(--text-secondary); font-size: 0.9rem; }
+
+    /* Sidebar */
+    .sidebar {
+      width: 340px; background: var(--bg-secondary);
+      border-left: 1px solid var(--border);
+      display: flex; flex-direction: column;
     }
 
-    .waiting-overlay i {
-      font-size: 3rem;
-      color: var(--text-muted);
-      margin-bottom: 16px;
+    .sidebar-tabs {
+      display: flex; border-bottom: 1px solid var(--border);
     }
+    .sidebar-tab {
+      flex: 1; padding: 12px; text-align: center;
+      font-size: 0.8rem; font-weight: 500;
+      color: var(--text-muted); cursor: pointer;
+      border-bottom: 2px solid transparent; transition: all 0.2s;
+    }
+    .sidebar-tab:hover { color: var(--text-secondary); }
+    .sidebar-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+    .sidebar-tab i { margin-right: 6px; }
 
-    .waiting-overlay p {
-      color: var(--text-secondary);
-      font-size: 1rem;
-    }
+    .sidebar-content { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
+    .sidebar-panel { flex: 1; display: none; flex-direction: column; overflow: hidden; }
+    .sidebar-panel.active { display: flex; }
 
     /* Captions Panel */
-    .captions-panel {
-      width: 320px;
-      background: var(--bg-secondary);
-      border-radius: 16px;
-      border: 1px solid var(--border);
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-    }
+    .captions-list { flex: 1; overflow-y: auto; padding: 12px; }
+    .caption-line { margin-bottom: 12px; padding: 10px; background: var(--bg-tertiary); border-radius: 8px; }
+    .caption-line.mine { border-left: 3px solid var(--accent); }
+    .caption-line.peer { border-left: 3px solid var(--blue); }
+    .caption-speaker { font-size: 0.7rem; color: var(--text-muted); margin-bottom: 4px; text-transform: uppercase; }
+    .caption-original { font-size: 0.85rem; color: var(--text-primary); line-height: 1.4; }
+    .caption-translated { font-size: 0.8rem; color: var(--success); margin-top: 4px; font-style: italic; }
+    .caption-interim { padding: 10px 12px; background: var(--bg-tertiary); border-radius: 8px; margin: 0 12px 12px; opacity: 0.6; font-size: 0.85rem; }
 
-    .captions-header {
-      padding: 14px 16px;
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-
-    .captions-header h4 {
-      font-size: 0.9rem;
-      font-weight: 600;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .captions-header h4 i {
-      color: var(--accent);
-    }
-
-    .lang-selects {
-      display: flex;
-      gap: 6px;
-    }
-
+    .lang-bar { padding: 10px 12px; border-top: 1px solid var(--border); display: flex; align-items: center; gap: 8px; }
     .lang-select {
-      padding: 4px 8px;
-      border-radius: 4px;
-      border: 1px solid var(--border);
-      background: var(--bg-tertiary);
-      color: var(--text-secondary);
-      font-size: 0.75rem;
-      cursor: pointer;
+      flex: 1; padding: 6px 8px; border-radius: 4px;
+      border: 1px solid var(--border); background: var(--bg-tertiary);
+      color: var(--text-secondary); font-size: 0.75rem; cursor: pointer;
     }
+    .lang-select:focus { outline: none; border-color: var(--accent); }
 
-    .lang-select:focus {
-      outline: none;
-      border-color: var(--accent);
-    }
+    /* Chat Panel */
+    .chat-messages { flex: 1; overflow-y: auto; padding: 12px; }
+    .chat-msg { margin-bottom: 12px; }
+    .chat-msg-header { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
+    .chat-msg-name { font-size: 0.8rem; font-weight: 600; color: var(--text-primary); }
+    .chat-msg-time { font-size: 0.7rem; color: var(--text-muted); }
+    .chat-msg-text { font-size: 0.85rem; color: var(--text-secondary); line-height: 1.4; padding: 8px 10px; background: var(--bg-tertiary); border-radius: 8px; }
+    .chat-msg.mine .chat-msg-text { background: rgba(0, 168, 132, 0.2); }
 
-    .captions-body {
-      flex: 1;
-      overflow-y: auto;
-      padding: 12px;
+    .chat-input-area { padding: 12px; border-top: 1px solid var(--border); display: flex; gap: 8px; }
+    .chat-input {
+      flex: 1; padding: 10px 12px; border-radius: 8px;
+      border: 1px solid var(--border); background: var(--bg-tertiary);
+      color: var(--text-primary); font-size: 0.85rem; resize: none;
     }
+    .chat-input:focus { outline: none; border-color: var(--accent); }
+    .chat-send-btn {
+      padding: 10px 14px; border-radius: 8px; border: none;
+      background: var(--accent); color: white; cursor: pointer;
+      font-size: 0.85rem; transition: all 0.2s;
+    }
+    .chat-send-btn:hover { background: var(--accent-hover); }
 
-    .caption-item {
-      margin-bottom: 16px;
-      padding: 12px;
-      background: var(--bg-tertiary);
-      border-radius: 10px;
-      border-left: 3px solid var(--accent);
+    /* Host Controls Panel */
+    .host-controls-panel {
+      padding: 12px; border-top: 1px solid var(--border);
+      background: var(--bg-tertiary); display: none;
     }
-
-    .caption-item.peer {
-      border-left-color: #3b82f6;
+    .host-controls-panel.show { display: block; }
+    .host-controls-title { font-size: 0.7rem; color: var(--text-muted); margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .host-control-btns { display: flex; flex-wrap: wrap; gap: 6px; }
+    .host-ctrl-btn {
+      padding: 6px 10px; border-radius: 6px; border: 1px solid var(--border);
+      background: var(--bg-secondary); color: var(--text-secondary);
+      font-size: 0.75rem; cursor: pointer; transition: all 0.2s;
+      display: flex; align-items: center; gap: 4px;
     }
-
-    .caption-item .speaker {
-      font-size: 0.75rem;
-      color: var(--text-muted);
-      margin-bottom: 6px;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-
-    .caption-item .original {
-      font-size: 0.9rem;
-      color: var(--text-primary);
-      line-height: 1.4;
-      margin-bottom: 6px;
-    }
-
-    .caption-item .translated {
-      font-size: 0.85rem;
-      color: var(--success);
-      font-style: italic;
-      line-height: 1.4;
-    }
-
-    .caption-item .translated:empty {
-      display: none;
-    }
+    .host-ctrl-btn:hover { border-color: var(--accent); color: var(--text-primary); }
+    .host-ctrl-btn.danger:hover { border-color: var(--danger); color: var(--danger); }
 
     /* Control Bar */
     .control-bar {
-      height: 72px;
-      background: var(--bg-secondary);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      border-top: 1px solid var(--border);
-      padding: 0 20px;
+      height: 68px; background: var(--bg-secondary);
+      display: flex; align-items: center; justify-content: center;
+      gap: 8px; border-top: 1px solid var(--border); padding: 0 16px;
     }
-
     .control-btn {
-      width: 48px;
-      height: 48px;
-      border-radius: 12px;
-      border: none;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1.1rem;
-      transition: all 0.15s;
-      position: relative;
+      width: 44px; height: 44px; border-radius: 10px; border: none;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      font-size: 1rem; transition: all 0.15s;
     }
-
-    .control-btn.default {
-      background: var(--bg-tertiary);
-      color: var(--text-primary);
-    }
-
-    .control-btn.default:hover {
-      background: var(--bg-hover);
-    }
-
-    .control-btn.active {
-      background: var(--accent);
-      color: white;
-    }
-
-    .control-btn.muted {
-      background: var(--danger);
-      color: white;
-    }
-
-    .control-btn.muted:hover {
-      background: var(--danger-hover);
-    }
-
+    .control-btn.default { background: var(--bg-tertiary); color: var(--text-primary); }
+    .control-btn.default:hover { background: var(--bg-hover); }
+    .control-btn.active { background: var(--accent); color: white; }
+    .control-btn.muted { background: var(--danger); color: white; }
+    .control-btn.muted:hover { background: var(--danger-hover); }
     .control-btn.leave {
-      background: var(--danger);
-      color: white;
-      width: auto;
-      padding: 0 20px;
-      border-radius: 24px;
-      gap: 8px;
-      font-size: 0.9rem;
-      font-weight: 500;
-      margin-left: 16px;
+      background: var(--danger); color: white;
+      width: auto; padding: 0 18px; border-radius: 22px;
+      gap: 6px; font-size: 0.85rem; font-weight: 500; margin-left: 12px;
     }
-
-    .control-btn.leave:hover {
-      background: var(--danger-hover);
-    }
-
-    .control-divider {
-      width: 1px;
-      height: 32px;
-      background: var(--border);
-      margin: 0 8px;
-    }
+    .control-btn.leave:hover { background: var(--danger-hover); }
+    .control-divider { width: 1px; height: 28px; background: var(--border); margin: 0 6px; }
 
     /* Toast */
     .toast {
-      position: fixed;
-      bottom: 90px;
-      left: 50%;
+      position: fixed; bottom: 85px; left: 50%;
       transform: translateX(-50%) translateY(20px);
-      background: var(--bg-tertiary);
-      color: var(--text-primary);
-      padding: 12px 20px;
-      border-radius: 8px;
-      font-size: 0.9rem;
-      border: 1px solid var(--border);
-      opacity: 0;
-      transition: all 0.3s;
-      z-index: 1000;
+      background: var(--bg-tertiary); color: var(--text-primary);
+      padding: 10px 18px; border-radius: 8px; font-size: 0.85rem;
+      border: 1px solid var(--border); opacity: 0; transition: all 0.3s; z-index: 1000;
     }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
-    .toast.show {
-      opacity: 1;
-      transform: translateX(-50%) translateY(0);
+    /* Host Control Banner */
+    .host-banner {
+      position: fixed; top: 60px; left: 50%;
+      transform: translateX(-50%);
+      background: var(--warning); color: #000;
+      padding: 8px 16px; border-radius: 6px;
+      font-size: 0.85rem; font-weight: 500;
+      z-index: 100; display: none;
     }
+    .host-banner.show { display: block; }
 
     /* Responsive */
     @media (max-width: 1024px) {
-      .join-container {
-        flex-direction: column;
-        gap: 40px;
-      }
-      
-      .join-branding {
-        text-align: center;
-      }
-      
-      .captions-panel {
-        display: none;
-      }
-      
-      .video-wrapper.self {
-        width: 140px;
-      }
-      
-      .video-wrapper.self video {
-        height: 90px;
-      }
+      .join-container { flex-direction: column; gap: 40px; }
+      .join-branding { text-align: center; }
+      .sidebar { width: 280px; }
+      .video-wrapper.self { width: 140px; }
+      .video-wrapper.self video { height: 85px; }
+    }
+    @media (max-width: 768px) {
+      .sidebar { display: none; }
     }
   </style>
 </head>
@@ -647,12 +340,11 @@
           <span class="logo-text">MeetFlow</span>
         </div>
         <h2>Connect with anyone,<br>anywhere</h2>
-        <p>High-quality video meetings with real-time captions and translation. Simple, secure, and free.</p>
+        <p>High-quality video meetings with real-time captions, translation, and chat. Simple, secure, and free.</p>
       </div>
       
       <div class="join-card">
         <h3>Join or Start a Meeting</h3>
-        
         <div class="error-msg" id="joinError"></div>
         
         <div class="form-group">
@@ -670,19 +362,26 @@
           <input type="password" id="passcode" placeholder="Meeting passcode">
         </div>
         
-        <label style="display: block; font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px;">Role</label>
+        <label style="display: block; font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">Role</label>
         <div class="role-selector">
-          <button class="role-btn selected" id="hostBtn" data-role="host">
-            <i class="fas fa-crown"></i> Host
-          </button>
-          <button class="role-btn" id="participantBtn" data-role="participant">
-            <i class="fas fa-user"></i> Participant
-          </button>
+          <button class="role-btn selected" id="hostBtn"><i class="fas fa-crown"></i> Host</button>
+          <button class="role-btn" id="participantBtn"><i class="fas fa-user"></i> Participant</button>
         </div>
         
-        <button class="join-btn" id="joinBtn">
-          Join Meeting
-        </button>
+        <!-- Host Options (only visible when Host selected) -->
+        <div class="host-options show" id="hostOptions">
+          <div class="host-options-title">Participant Settings</div>
+          <label class="checkbox-group">
+            <input type="checkbox" id="optMicMuted">
+            <span>Participants join with mic OFF</span>
+          </label>
+          <label class="checkbox-group">
+            <input type="checkbox" id="optCamOff">
+            <span>Participants join with camera OFF</span>
+          </label>
+        </div>
+        
+        <button class="join-btn" id="joinBtn">Join Meeting</button>
       </div>
     </div>
   </div>
@@ -692,101 +391,103 @@
     <!-- Header -->
     <header class="meeting-header">
       <div class="header-left">
-        <div class="header-logo">
-          <i class="fas fa-video"></i>
-          <span>MeetFlow</span>
-        </div>
-        <div class="meeting-info-badge">
-          <i class="fas fa-lock"></i>
-          <span id="meetingIdDisplay">Meeting</span>
-        </div>
-        <div class="meeting-info-badge">
-          <i class="fas fa-clock"></i>
-          <span id="meetingTimer">00:00</span>
-        </div>
+        <div class="header-logo"><i class="fas fa-video"></i> MeetFlow</div>
+        <div class="info-badge"><i class="fas fa-lock"></i> <span id="meetingIdDisplay">Meeting</span></div>
+        <div class="info-badge"><i class="fas fa-clock"></i> <span id="meetingTimer">00:00</span></div>
       </div>
       <div class="header-right">
-        <div class="live-indicator">
-          <span class="live-dot"></span>
-          LIVE
-        </div>
-        <div class="participant-badge">
-          <i class="fas fa-users"></i>
-          <span id="participantCount">1</span>
-        </div>
+        <div class="live-indicator"><span class="live-dot"></span> LIVE</div>
+        <div class="info-badge"><i class="fas fa-users"></i> <span id="participantCount">1</span></div>
       </div>
     </header>
 
-    <!-- Video Area -->
-    <main class="video-area">
-      <div class="main-video-container">
-        <!-- Remote Video (Main) -->
-        <div class="video-wrapper main" id="remoteVideoWrapper">
-          <video id="remoteVideo" autoplay playsinline></video>
-          <div class="name-badge" id="remoteNameBadge">
-            <span>Waiting...</span>
-            <i class="fas fa-microphone-slash mic-status" id="remoteMicStatus" style="display:none;"></i>
-          </div>
-          <div class="waiting-overlay" id="waitingMessage">
-            <i class="fas fa-user-clock"></i>
-            <p>Waiting for others to join...</p>
-          </div>
-        </div>
-        
-        <!-- Self View (Floating) -->
-        <div class="self-view-container" id="selfViewContainer">
-          <div class="video-wrapper self" id="localVideoWrapper">
-            <video id="localVideo" autoplay playsinline muted></video>
-            <div class="name-badge" id="localNameBadge">
-              <span>You</span>
-              <i class="fas fa-microphone-slash mic-status" id="localMicStatus" style="display:none;"></i>
+    <!-- Main Area -->
+    <main class="meeting-main">
+      <!-- Video Area -->
+      <div class="video-area">
+        <div class="main-video-container">
+          <div class="video-wrapper main" id="remoteVideoWrapper">
+            <video id="remoteVideo" autoplay playsinline></video>
+            <div class="name-badge" id="remoteNameBadge">
+              <span>Waiting...</span>
+              <i class="fas fa-microphone-slash mic-status" id="remoteMicStatus" style="display:none;"></i>
+            </div>
+            <div class="waiting-overlay" id="waitingMessage">
+              <i class="fas fa-user-clock"></i>
+              <p>Waiting for others to join...</p>
             </div>
           </div>
-          <!-- Face cam during screen share -->
-          <div class="video-wrapper face-cam" id="faceCamWrapper" style="display:none;">
-            <video id="faceCamVideo" autoplay playsinline muted></video>
+          
+          <div class="self-view-container">
+            <div class="video-wrapper self">
+              <video id="localVideo" autoplay playsinline muted></video>
+              <div class="name-badge" id="localNameBadge">
+                <span>You</span>
+                <i class="fas fa-microphone-slash mic-status" id="localMicStatus" style="display:none;"></i>
+              </div>
+            </div>
+            <div class="video-wrapper face-cam" id="faceCamWrapper" style="display:none;">
+              <video id="faceCamVideo" autoplay playsinline muted></video>
+            </div>
           </div>
         </div>
       </div>
 
-      <!-- Captions Panel -->
-      <div class="captions-panel">
-        <div class="captions-header">
-          <h4><i class="fas fa-closed-captioning"></i> Live Captions</h4>
-          <div class="lang-selects">
-            <select class="lang-select" id="spokenLang" title="Speaking">
-              <option value="en-US">EN</option>
-              <option value="ur-PK">UR</option>
-              <option value="hi-IN">HI</option>
-              <option value="es-ES">ES</option>
-              <option value="fr-FR">FR</option>
-              <option value="de-DE">DE</option>
-              <option value="zh-CN">ZH</option>
-              <option value="ar-SA">AR</option>
-            </select>
-            <span style="color: var(--text-muted);">→</span>
-            <select class="lang-select" id="translateTo" title="Translate to">
-              <option value="ur">UR</option>
-              <option value="en">EN</option>
-              <option value="hi">HI</option>
-              <option value="es">ES</option>
-              <option value="fr">FR</option>
-              <option value="de">DE</option>
-              <option value="zh">ZH</option>
-              <option value="ar">AR</option>
-            </select>
+      <!-- Sidebar (Captions + Chat) -->
+      <div class="sidebar">
+        <div class="sidebar-tabs">
+          <div class="sidebar-tab active" data-tab="captions"><i class="fas fa-closed-captioning"></i> Captions</div>
+          <div class="sidebar-tab" data-tab="chat"><i class="fas fa-comment"></i> Chat</div>
+        </div>
+        
+        <div class="sidebar-content">
+          <!-- Captions Panel -->
+          <div class="sidebar-panel active" id="captionsPanel">
+            <div class="caption-interim" id="captionInterim"></div>
+            <div class="captions-list" id="captionsList"></div>
+            <div class="lang-bar">
+              <select class="lang-select" id="spokenLang" title="Your language">
+                <option value="en-US">🎤 English</option>
+                <option value="ur-PK">🎤 Urdu</option>
+                <option value="hi-IN">🎤 Hindi</option>
+                <option value="es-ES">🎤 Spanish</option>
+                <option value="fr-FR">🎤 French</option>
+                <option value="de-DE">🎤 German</option>
+                <option value="zh-CN">🎤 Chinese</option>
+                <option value="ar-SA">🎤 Arabic</option>
+              </select>
+              <span style="color: var(--text-muted);">→</span>
+              <select class="lang-select" id="translateTo" title="Translate to">
+                <option value="ur">🌐 Urdu</option>
+                <option value="en">🌐 English</option>
+                <option value="hi">🌐 Hindi</option>
+                <option value="es">🌐 Spanish</option>
+                <option value="fr">🌐 French</option>
+                <option value="de">🌐 German</option>
+                <option value="zh">🌐 Chinese</option>
+                <option value="ar">🌐 Arabic</option>
+              </select>
+            </div>
+          </div>
+          
+          <!-- Chat Panel -->
+          <div class="sidebar-panel" id="chatPanel">
+            <div class="chat-messages" id="chatMessages"></div>
+            <div class="chat-input-area">
+              <input type="text" class="chat-input" id="chatInput" placeholder="Type a message..." maxlength="500">
+              <button class="chat-send-btn" id="chatSendBtn"><i class="fas fa-paper-plane"></i></button>
+            </div>
           </div>
         </div>
-        <div class="captions-body" id="captionsBody">
-          <div class="caption-item" id="myCaptionItem">
-            <div class="speaker">You</div>
-            <div class="original" id="myCaption">Speak to see captions...</div>
-            <div class="translated" id="myTranslation"></div>
-          </div>
-          <div class="caption-item peer" id="peerCaptionItem" style="display:none;">
-            <div class="speaker" id="peerCaptionName">Peer</div>
-            <div class="original" id="peerCaption"></div>
-            <div class="translated" id="peerTranslation"></div>
+        
+        <!-- Host Controls (only visible to host) -->
+        <div class="host-controls-panel" id="hostControlsPanel">
+          <div class="host-controls-title">Participant Controls</div>
+          <div class="host-control-btns">
+            <button class="host-ctrl-btn" id="ctrlMuteMic"><i class="fas fa-microphone-slash"></i> Mute</button>
+            <button class="host-ctrl-btn" id="ctrlUnmuteMic"><i class="fas fa-microphone"></i> Unmute</button>
+            <button class="host-ctrl-btn danger" id="ctrlDisableCam"><i class="fas fa-video-slash"></i> Cam Off</button>
+            <button class="host-ctrl-btn" id="ctrlEnableCam"><i class="fas fa-video"></i> Cam On</button>
           </div>
         </div>
       </div>
@@ -794,29 +495,20 @@
 
     <!-- Control Bar -->
     <footer class="control-bar">
-      <button class="control-btn default" id="micBtn" title="Toggle Microphone">
-        <i class="fas fa-microphone"></i>
-      </button>
-      
-      <button class="control-btn default" id="cameraBtn" title="Toggle Camera">
-        <i class="fas fa-video"></i>
-      </button>
-      
+      <button class="control-btn default" id="micBtn" title="Toggle Microphone"><i class="fas fa-microphone"></i></button>
+      <button class="control-btn default" id="cameraBtn" title="Toggle Camera"><i class="fas fa-video"></i></button>
       <div class="control-divider"></div>
-      
-      <button class="control-btn default" id="screenBtn" title="Share Screen">
-        <i class="fas fa-display"></i>
-      </button>
-      
-      <button class="control-btn leave" id="leaveBtn">
-        <i class="fas fa-phone-slash"></i>
-        Leave
-      </button>
+      <button class="control-btn default" id="screenBtn" title="Share Screen"><i class="fas fa-display"></i></button>
+      <button class="control-btn default" id="chatToggleBtn" title="Toggle Chat"><i class="fas fa-comment"></i></button>
+      <button class="control-btn leave" id="leaveBtn"><i class="fas fa-phone-slash"></i> Leave</button>
     </footer>
   </div>
 
   <!-- Toast -->
   <div class="toast" id="toast"></div>
+  
+  <!-- Host Control Banner -->
+  <div class="host-banner" id="hostBanner"></div>
 
   <script src="app.js"></script>
 </body>

@@ -1,7 +1,12 @@
 """
-Video Call Backend with Room Management
-- WebSocket signaling for WebRTC
-- Room + passcode + host/participant logic
+MeetFlow Backend - WebRTC Signaling Server with Room Management
+
+Features:
+- Room creation with passcode
+- Host/participant roles
+- Host meeting options (initial mic/cam state for participants)
+- Host remote control of participant media
+- Chat messaging
 - Translation API
 """
 
@@ -16,7 +21,6 @@ import json
 
 app = FastAPI()
 
-# Enable CORS for all origins
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -26,14 +30,16 @@ app.add_middleware(
 )
 
 # ============================================================
-# Room Management Data Structure
+# Room Data Structure
 # ============================================================
 # rooms = {
 #     room_id: {
-#         "passcode": "1234",
-#         "host_joined": True/False,
+#         "passcode": str,
+#         "host_joined": bool,
 #         "host_ws": WebSocket or None,
-#         "clients": [(WebSocket, name, role), ...]
+#         "clients": [(WebSocket, name, role), ...],
+#         "participant_mic_initially_muted": bool,  # Host setting
+#         "participant_cam_initially_off": bool,    # Host setting
 #     }
 # }
 rooms: Dict[str, dict] = {}
@@ -49,7 +55,7 @@ class TranslationRequest(BaseModel):
 
 
 # ============================================================
-# WebSocket Signaling with Room/Host Logic
+# WebSocket Signaling
 # ============================================================
 @app.websocket("/ws/{room_id}")
 async def websocket_endpoint(websocket: WebSocket, room_id: str):
@@ -66,17 +72,20 @@ async def websocket_endpoint(websocket: WebSocket, room_id: str):
             msg_type = data.get("type")
             
             # --------------------------------------------------------
-            # Handle JOIN message (must be first message from client)
+            # JOIN - Room creation/joining with host options
             # --------------------------------------------------------
             if msg_type == "join":
                 client_name = data.get("name", "Anonymous")
                 client_role = data.get("role", "participant")
                 passcode = data.get("passcode", "")
                 
-                # Case 1: Room doesn't exist yet
+                # Host options for participant initial state
+                participant_mic_muted = data.get("participantMicInitiallyMuted", False)
+                participant_cam_off = data.get("participantCamInitiallyOff", False)
+                
+                # Room doesn't exist - only host can create
                 if room_id not in rooms:
                     if client_role != "host":
-                        # Only host can create a room
                         await websocket.send_text(json.dumps({
                             "type": "error",
                             "message": "Room does not exist. Only a host can create it."
@@ -84,12 +93,14 @@ async def websocket_endpoint(websocket: WebSocket, room_id: str):
                         await websocket.close()
                         return
                     
-                    # Create new room
+                    # Create room with host options
                     rooms[room_id] = {
                         "passcode": passcode,
                         "host_joined": True,
                         "host_ws": websocket,
-                        "clients": [(websocket, client_name, client_role)]
+                        "clients": [(websocket, client_name, client_role)],
+                        "participant_mic_initially_muted": participant_mic_muted,
+                        "participant_cam_initially_off": participant_cam_off,
                     }
                     joined = True
                     
@@ -100,7 +111,7 @@ async def websocket_endpoint(websocket: WebSocket, room_id: str):
                     }))
                     print(f"[Room {room_id}] Created by host: {client_name}")
                 
-                # Case 2: Room already exists
+                # Room exists
                 else:
                     room = rooms[room_id]
                     
@@ -113,7 +124,7 @@ async def websocket_endpoint(websocket: WebSocket, room_id: str):
                         await websocket.close()
                         return
                     
-                    # Check if trying to join as host when host exists
+                    # Host already exists
                     if client_role == "host" and room["host_joined"]:
                         await websocket.send_text(json.dumps({
                             "type": "error",
@@ -122,7 +133,7 @@ async def websocket_endpoint(websocket: WebSocket, room_id: str):
                         await websocket.close()
                         return
                     
-                    # Add client to room
+                    # Add client
                     room["clients"].append((websocket, client_name, client_role))
                     joined = True
                     
@@ -130,12 +141,10 @@ async def websocket_endpoint(websocket: WebSocket, room_id: str):
                         room["host_joined"] = True
                         room["host_ws"] = websocket
                         
-                        # Notify all participants that host joined
+                        # Notify participants
                         for client_ws, _, _ in room["clients"]:
                             if client_ws != websocket:
-                                await client_ws.send_text(json.dumps({
-                                    "type": "host-joined"
-                                }))
+                                await client_ws.send_text(json.dumps({"type": "host-joined"}))
                         
                         await websocket.send_text(json.dumps({
                             "type": "join-accepted",
@@ -144,21 +153,22 @@ async def websocket_endpoint(websocket: WebSocket, room_id: str):
                         }))
                         print(f"[Room {room_id}] Host joined: {client_name}")
                     
-                    else:  # participant
+                    else:  # Participant
                         if not room["host_joined"]:
-                            await websocket.send_text(json.dumps({
-                                "type": "wait-for-host"
-                            }))
+                            await websocket.send_text(json.dumps({"type": "wait-for-host"}))
                             print(f"[Room {room_id}] Participant waiting: {client_name}")
                         else:
+                            # Send join-accepted with initial media state from host settings
                             await websocket.send_text(json.dumps({
                                 "type": "join-accepted",
                                 "isHost": False,
-                                "name": client_name
+                                "name": client_name,
+                                "participantMicInitiallyMuted": room["participant_mic_initially_muted"],
+                                "participantCamInitiallyOff": room["participant_cam_initially_off"]
                             }))
                             
-                            # Notify others that someone joined
-                            for client_ws, cname, _ in room["clients"]:
+                            # Notify others
+                            for client_ws, _, _ in room["clients"]:
                                 if client_ws != websocket:
                                     await client_ws.send_text(json.dumps({
                                         "type": "peer-joined",
@@ -167,15 +177,49 @@ async def websocket_endpoint(websocket: WebSocket, room_id: str):
                             print(f"[Room {room_id}] Participant joined: {client_name}")
             
             # --------------------------------------------------------
-            # Handle other signaling messages (offer, answer, ice, etc.)
+            # HOST-CONTROL - Host controls participant media
+            # --------------------------------------------------------
+            elif msg_type == "host-control" and joined and room_id in rooms:
+                room = rooms[room_id]
+                
+                # Only host can send control messages
+                if client_role == "host":
+                    # Broadcast to all participants (not host)
+                    for client_ws, _, crole in room["clients"]:
+                        if client_ws != websocket and crole == "participant":
+                            await client_ws.send_text(json.dumps({
+                                "type": "host-control",
+                                "action": data.get("action"),
+                                "from": "host"
+                            }))
+                    print(f"[Room {room_id}] Host control: {data.get('action')}")
+            
+            # --------------------------------------------------------
+            # CHAT - Broadcast chat messages to all in room
+            # --------------------------------------------------------
+            elif msg_type == "chat" and joined and room_id in rooms:
+                room = rooms[room_id]
+                
+                # Broadcast to ALL clients including sender
+                chat_msg = json.dumps({
+                    "type": "chat",
+                    "from": data.get("from", client_name),
+                    "text": data.get("text", ""),
+                    "timestamp": data.get("timestamp", 0)
+                })
+                
+                for client_ws, _, _ in room["clients"]:
+                    await client_ws.send_text(chat_msg)
+            
+            # --------------------------------------------------------
+            # Other signaling (offer, answer, ice, caption, etc.)
             # --------------------------------------------------------
             elif joined and room_id in rooms:
                 room = rooms[room_id]
                 
-                # Broadcast to all other clients in the room
+                # Broadcast to other clients
                 for client_ws, _, _ in room["clients"]:
                     if client_ws != websocket:
-                        # Add sender name to the message
                         data["senderName"] = client_name
                         await client_ws.send_text(json.dumps(data))
     
@@ -184,29 +228,22 @@ async def websocket_endpoint(websocket: WebSocket, room_id: str):
     except Exception as e:
         print(f"WebSocket error: {e}")
     finally:
-        # Clean up on disconnect
+        # Cleanup on disconnect
         if joined and room_id in rooms:
             room = rooms[room_id]
-            
-            # Remove client from room
             room["clients"] = [(ws, n, r) for ws, n, r in room["clients"] if ws != websocket]
             
-            # If host disconnected
             if client_role == "host":
                 room["host_joined"] = False
                 room["host_ws"] = None
                 
-                # Notify remaining clients
                 for client_ws, _, _ in room["clients"]:
                     try:
-                        await client_ws.send_text(json.dumps({
-                            "type": "host-left"
-                        }))
+                        await client_ws.send_text(json.dumps({"type": "host-left"}))
                     except:
                         pass
                 print(f"[Room {room_id}] Host left: {client_name}")
             else:
-                # Notify others that peer left
                 for client_ws, _, _ in room["clients"]:
                     try:
                         await client_ws.send_text(json.dumps({
@@ -217,7 +254,6 @@ async def websocket_endpoint(websocket: WebSocket, room_id: str):
                         pass
                 print(f"[Room {room_id}] Participant left: {client_name}")
             
-            # Delete room if empty
             if len(room["clients"]) == 0:
                 del rooms[room_id]
                 print(f"[Room {room_id}] Deleted (empty)")
@@ -228,9 +264,6 @@ async def websocket_endpoint(websocket: WebSocket, room_id: str):
 # ============================================================
 @app.post("/translate")
 async def translate(req: TranslationRequest):
-    """Fast async translation with caching using MyMemory API."""
-    
-    # Check cache first
     cache_key = f"{req.text}|{req.source_lang}|{req.target_lang}"
     if cache_key in translation_cache:
         return {"translated": translation_cache[cache_key]}
@@ -250,7 +283,6 @@ async def translate(req: TranslationRequest):
                     translated_text = data.get("responseData", {}).get("translatedText", req.text)
                     translation_cache[cache_key] = translated_text
                     
-                    # Limit cache size
                     if len(translation_cache) > 500:
                         keys = list(translation_cache.keys())[:100]
                         for k in keys:
@@ -258,15 +290,12 @@ async def translate(req: TranslationRequest):
     except Exception as e:
         print(f"Translation error: {e}")
     
-    if translated_text is None:
-        translated_text = req.text
-    
-    return {"translated": translated_text}
+    return {"translated": translated_text or req.text}
 
 
 @app.get("/")
 async def root():
-    return {"message": "Video call backend is running", "active_rooms": len(rooms)}
+    return {"message": "MeetFlow backend running", "rooms": len(rooms)}
 
 
 if __name__ == "__main__":
