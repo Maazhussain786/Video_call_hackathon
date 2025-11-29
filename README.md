@@ -1,49 +1,87 @@
-# Hackathon Video Call with Live Captions & Translation
+# 🎥 MeetFlow
 
-A minimal two-person video call application with live speech-to-text captions and real-time translation.
+**Real-time Video Conferencing with Live Captions & Translation**
 
-## Features
+A modern video conferencing application built for seamless communication across language barriers. Features YouTube-style live captions, real-time translation powered by DeepL, and a beautiful dark-themed UI.
 
-- **Two-person video call** using WebRTC (peer-to-peer)
-- **Live captions** using browser Web Speech API
-- **Real-time translation** using OpenAI API (with LibreTranslate fallback)
+![MeetFlow](https://img.shields.io/badge/MeetFlow-Video%20Conferencing-00a884?style=for-the-badge&logo=webrtc)
+![WebRTC](https://img.shields.io/badge/WebRTC-Peer%20to%20Peer-333333?style=flat-square&logo=webrtc)
+![Python](https://img.shields.io/badge/Python-FastAPI-3776ab?style=flat-square&logo=python)
+![JavaScript](https://img.shields.io/badge/JavaScript-Vanilla-f7df1e?style=flat-square&logo=javascript)
 
-## Tech Stack
+---
 
-- **Backend**: Python, FastAPI, uvicorn
-- **Frontend**: Plain HTML + JavaScript (no frameworks)
-- **Real-time media**: WebRTC
-- **Speech recognition**: Browser Web Speech API
-- **Translation**: OpenAI API
+## ✨ Features
 
-## Project Structure
+### 🎬 Video Calling
+- **Peer-to-peer WebRTC** connection for low-latency video calls
+- **Screen sharing** with face cam picture-in-picture
+- **Camera & microphone** toggle controls
+
+### 📝 Live Captions (YouTube-style)
+- **Real-time speech recognition** using Web Speech API
+- **Translucent captions** overlaid on video (like YouTube subtitles)
+- **Caption history** panel with timestamps
+- **Auto-hide** captions after display
+
+### 🌐 Real-time Translation
+- **DeepL API** for high-quality translation (German, French, Spanish, etc.)
+- **MyMemory fallback** for languages not supported by DeepL (Urdu, Hindi, Arabic)
+- **Instant translation** of captions in real-time
+- **6+ languages** supported
+
+### 💬 In-Meeting Chat
+- **Real-time messaging** during calls
+- **Message history** with timestamps
+- **Sender identification**
+
+### 👑 Host Controls
+- **Create meetings** with custom passcode
+- **Control participant media** (mute/unmute, camera on/off)
+- **Set default participant settings** (join with mic/camera off)
+
+---
+
+## 🛠️ Tech Stack
+
+| Layer | Technology |
+|-------|------------|
+| **Backend** | Python, FastAPI, Uvicorn |
+| **Frontend** | HTML5, CSS3, Vanilla JavaScript |
+| **Real-time** | WebRTC, WebSockets |
+| **Speech** | Web Speech API (SpeechRecognition) |
+| **Translation** | DeepL API, MyMemory API |
+| **Icons** | Font Awesome 6 |
+
+---
+
+## 📁 Project Structure
 
 ```
-project-root/
+MeetFlow/
 ├── backend/
-│   ├── main.py
-│   └── requirements.txt
+│   ├── main.py              # FastAPI server (WebSocket signaling + Translation API)
+│   └── requirements.txt     # Python dependencies
 ├── frontend/
-│   ├── index.html
-│   └── app.js
+│   ├── index.html           # Main UI (Join screen + Meeting screen)
+│   └── app.js               # Client-side logic (WebRTC, Speech, Chat)
 └── README.md
 ```
 
-## Setup Instructions (Ubuntu Linux)
+---
 
-### 1. Set Environment Variables
+## 🚀 Quick Start
+
+### Prerequisites
+- Python 3.8+
+- Modern browser (Chrome recommended for Speech API)
+- Camera & microphone
+
+### 1. Clone & Setup
 
 ```bash
-export OPENAI_API_KEY="your-openai-api-key-here"
-export OPENAI_MODEL="gpt-5.1"
-```
-
-You can add these to your `~/.bashrc` for persistence:
-
-```bash
-echo 'export OPENAI_API_KEY="your-key"' >> ~/.bashrc
-echo 'export OPENAI_MODEL="gpt-5.1"' >> ~/.bashrc
-source ~/.bashrc
+git clone <repository-url>
+cd MeetFlow
 ```
 
 ### 2. Install Backend Dependencies
@@ -53,116 +91,189 @@ cd backend
 pip install -r requirements.txt
 ```
 
-Or with pip3:
+### 3. Start the Backend Server
 
 ```bash
-pip3 install -r requirements.txt
+python main.py
 ```
 
-### 3. Run the Backend Server
-
-```bash
-cd backend
-uvicorn main:app --host 0.0.0.0 --port 8001 --reload
-```
-
-Or run directly with Python:
-
-```bash
-python3 main.py
-```
-
-The backend will be available at `http://localhost:8001`
+Server runs at `http://0.0.0.0:8001`
 
 ### 4. Serve the Frontend
 
-**Option A**: Open directly in browser
-
-Open `frontend/index.html` directly in Chrome (recommended for Web Speech API support).
-
-**Option B**: Use Python's built-in HTTP server
-
 ```bash
 cd frontend
-python3 -m http.server 5500
+python -m http.server 5500
 ```
 
-Then open `http://localhost:5500` in your browser.
+Frontend available at `http://localhost:5500`
 
-## How to Test
+### 5. Access from Other Devices
 
-1. **Start the backend server** (see step 3 above)
+Replace `localhost` with your machine's IP address:
+- Find IP: `hostname -I | awk '{print $1}'`
+- Update `HOST` variable in `frontend/app.js`
+- Access: `http://<your-ip>:5500`
 
-2. **Open the frontend** in two different browser windows/tabs (or on two different devices on the same network)
+> **Note:** For camera/mic access on non-localhost, add the URL to Chrome's insecure origins:
+> `chrome://flags/#unsafely-treat-insecure-origin-as-secure`
 
-3. **Click "Start Call"** on both windows
+---
 
-4. **Allow camera and microphone** access when prompted
+## 📖 How to Use
 
-5. **Speak into one side** - you should see:
-   - Live video of both users
-   - Captions in the original spoken language (English)
-   - Translated text underneath (Urdu)
+### Starting a Meeting (Host)
 
-## Configuration
+1. Enter your **name**
+2. Create a **Meeting ID** (e.g., `team-standup`)
+3. Set a **Passcode**
+4. Select **"Host"** role
+5. Optionally check participant settings
+6. Click **"Join Meeting"**
 
-The following can be changed in `frontend/app.js`:
+### Joining a Meeting (Participant)
 
-```javascript
-const wsUrl = "ws://localhost:8000/ws/room1"; // WebSocket signaling URL
-const apiBase = "http://localhost:8000";      // Backend API URL
-const SPOKEN_LANG = "en-US";                  // Speech recognition language
-const TARGET_LANG = "ur";                     // Translation target language
-```
+1. Enter your **name**
+2. Enter the **same Meeting ID** as the host
+3. Enter the **same Passcode**
+4. Select **"Participant"** role
+5. Click **"Join Meeting"**
 
-## API Endpoints
+### During the Meeting
 
-### WebSocket Signaling
-- **Endpoint**: `GET /ws/{room_id}`
-- **Purpose**: WebRTC signaling for peer connection
+| Control | Action |
+|---------|--------|
+| 🎤 | Toggle microphone |
+| 📹 | Toggle camera |
+| 🖥️ | Share screen |
+| CC | Toggle captions |
+| ☰ | Toggle sidebar (Captions/Chat) |
+| 📵 | Leave meeting |
+
+---
+
+## 🌍 Supported Languages
+
+### Speech Recognition
+English, Urdu, Hindi, Spanish, French, German, Chinese, Arabic
 
 ### Translation
-- **Endpoint**: `POST /translate`
-- **Body**: 
-  ```json
-  {
-    "text": "Hello world",
-    "source_lang": "en",
-    "target_lang": "ur"
-  }
-  ```
-- **Response**:
-  ```json
-  {
-    "translated": "ہیلو ورلڈ"
-  }
-  ```
+| DeepL (Primary) | MyMemory (Fallback) |
+|-----------------|---------------------|
+| English, German, French, Spanish, Italian, Dutch, Polish, Portuguese, Russian, Japanese, Chinese, Korean | Urdu, Hindi, Arabic, and 50+ more |
 
-## Troubleshooting
+---
 
-### Speech Recognition Not Working
-- Use Google Chrome (recommended) - it has the best Web Speech API support
-- Make sure microphone permissions are granted
-- Check that HTTPS is used if not on localhost
+## ⚙️ Configuration
 
-### Video Call Not Connecting
-- Ensure both browsers are using the same room (default: "room1")
-- Check that the backend server is running
-- Verify WebSocket connection in browser console
+### Backend (`backend/main.py`)
 
-### Translation Not Working
-- Verify `OPENAI_API_KEY` environment variable is set
-- Check backend console for error messages
-- The system will fallback to returning original text if translation fails
+```python
+# DeepL API Key (line ~51)
+DEEPL_API_KEY = "your-deepl-api-key:fx"
 
-## Browser Support
+# Server Port (line ~273)
+uvicorn.run(app, host="0.0.0.0", port=8001)
+```
 
-- **Recommended**: Google Chrome (best Web Speech API support)
-- **Works**: Microsoft Edge
-- **Limited**: Firefox (may have issues with Web Speech API)
-- **Not Supported**: Safari on some versions
+### Frontend (`frontend/app.js`)
 
-## License
+```javascript
+// Server IP (line ~6)
+const HOST = "10.7.48.13";  // Change to your server IP
+```
 
-MIT - Free to use for hackathons and demos.
+---
 
+## 🔌 API Endpoints
+
+### WebSocket Signaling
+```
+WS /ws/{room_id}
+```
+Handles: `join`, `offer`, `answer`, `ice`, `caption`, `chat`, `host-control`
+
+### Translation
+```
+POST /translate
+Content-Type: application/json
+
+{
+  "text": "Hello",
+  "source_lang": "en",
+  "target_lang": "ur"
+}
+
+Response: { "translated": "ہیلو" }
+```
+
+### Health Check
+```
+GET /
+Response: { "message": "MeetFlow backend running", "rooms": 0 }
+```
+
+---
+
+## 🎨 Screenshots
+
+### Join Screen
+- Clean, modern dark theme
+- Host/Participant role selection
+- Participant settings for hosts
+
+### Meeting Screen
+- YouTube-style captions overlay
+- Picture-in-picture self view
+- Sidebar with Captions history & Chat tabs
+- Intuitive control bar
+
+---
+
+## 🐛 Troubleshooting
+
+| Issue | Solution |
+|-------|----------|
+| Camera/mic not working | Check browser permissions, ensure no other app is using them |
+| Speech recognition not working | Use Chrome browser, check mic permissions |
+| Can't connect from other device | Use IP address instead of localhost, check firewall |
+| Translation returning original text | Check DeepL API key, verify language is supported |
+| Port already in use | Kill existing process: `pkill -f "python main.py"` |
+
+---
+
+## 🤝 Contributors
+
+<table>
+  <tr>
+    <td align="center">
+      <b>Maaz Hussain</b><br>
+      <sub>Full Stack Developer</sub>
+    </td>
+    <td align="center">
+      <b>Muhammad Abdul Daym</b><br>
+      <sub>Full Stack Developer</sub>
+    </td>
+  </tr>
+</table>
+
+---
+
+## 📄 License
+
+This project is open source and available under the [MIT License](LICENSE).
+
+---
+
+## 🙏 Acknowledgments
+
+- [WebRTC](https://webrtc.org/) - Real-time communication
+- [DeepL](https://www.deepl.com/) - Translation API
+- [Font Awesome](https://fontawesome.com/) - Icons
+- [Google STUN](https://webrtc.github.io/samples/) - STUN server
+
+---
+
+<p align="center">
+  Made with ❤️ for seamless global communication
+</p>
