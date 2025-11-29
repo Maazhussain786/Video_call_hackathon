@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Video Call with Live Translation</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      min-height: 100vh;
+      color: #fff;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    header h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      background: linear-gradient(90deg, #00d9ff, #00ff88);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    header p {
+      color: #8892b0;
+      margin-top: 8px;
+    }
+
+    /* Settings Panel */
+    .settings-panel {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 24px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      align-items: flex-end;
+    }
+
+    .setting-group {
+      flex: 1;
+      min-width: 200px;
+    }
+
+    .setting-group label {
+      display: block;
+      font-size: 0.85rem;
+      color: #8892b0;
+      margin-bottom: 8px;
+      font-weight: 500;
+    }
+
+    .setting-group select {
+      width: 100%;
+      padding: 12px 16px;
+      border-radius: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      background: rgba(255, 255, 255, 0.1);
+      color: #fff;
+      font-size: 0.95rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .setting-group select:hover {
+      border-color: #00d9ff;
+    }
+
+    .setting-group select:focus {
+      outline: none;
+      border-color: #00d9ff;
+      box-shadow: 0 0 0 3px rgba(0, 217, 255, 0.2);
+    }
+
+    .setting-group select option {
+      background: #1a1a2e;
+      color: #fff;
+    }
+
+    .btn {
+      padding: 14px 32px;
+      border-radius: 10px;
+      border: none;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #00d9ff, #00ff88);
+      color: #1a1a2e;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 30px rgba(0, 217, 255, 0.3);
+    }
+
+    .btn-primary:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .btn-danger {
+      background: linear-gradient(135deg, #ff4757, #ff6b81);
+      color: #fff;
+    }
+
+    .btn-danger:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 30px rgba(255, 71, 87, 0.3);
+    }
+
+    /* Video Section */
+    .video-section {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      margin-bottom: 24px;
+    }
+
+    .video-container {
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 16px;
+      overflow: hidden;
+      position: relative;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .video-container video {
+      width: 100%;
+      aspect-ratio: 16/9;
+      object-fit: cover;
+      display: block;
+      background: #000;
+    }
+
+    .video-label {
+      position: absolute;
+      bottom: 12px;
+      left: 12px;
+      background: rgba(0, 0, 0, 0.7);
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      backdrop-filter: blur(10px);
+    }
+
+    .video-label.you {
+      background: linear-gradient(135deg, rgba(0, 217, 255, 0.8), rgba(0, 255, 136, 0.8));
+      color: #1a1a2e;
+    }
+
+    .video-label.peer {
+      background: linear-gradient(135deg, rgba(255, 71, 87, 0.8), rgba(255, 107, 129, 0.8));
+      color: #fff;
+    }
+
+    /* Captions Section */
+    .captions-section {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+    }
+
+    .caption-panel {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 16px;
+      padding: 20px;
+      min-height: 200px;
+    }
+
+    .caption-panel.you-panel {
+      border-left: 4px solid #00d9ff;
+    }
+
+    .caption-panel.peer-panel {
+      border-left: 4px solid #ff4757;
+    }
+
+    .panel-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .panel-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.9rem;
+    }
+
+    .panel-icon.you-icon {
+      background: linear-gradient(135deg, #00d9ff, #00ff88);
+      color: #1a1a2e;
+    }
+
+    .panel-icon.peer-icon {
+      background: linear-gradient(135deg, #ff4757, #ff6b81);
+      color: #fff;
+    }
+
+    .panel-title {
+      font-weight: 600;
+      font-size: 1rem;
+    }
+
+    .caption-box {
+      margin-bottom: 16px;
+    }
+
+    .caption-label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #8892b0;
+      margin-bottom: 8px;
+      font-weight: 600;
+    }
+
+    .caption-text {
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 10px;
+      padding: 14px;
+      min-height: 60px;
+      font-size: 1rem;
+      line-height: 1.5;
+      color: #e6e6e6;
+    }
+
+    .caption-text.original {
+      border-left: 3px solid #00d9ff;
+    }
+
+    .caption-text.translated {
+      border-left: 3px solid #00ff88;
+    }
+
+    .caption-text.peer-original {
+      border-left: 3px solid #ff4757;
+    }
+
+    .caption-text.peer-translated {
+      border-left: 3px solid #ff6b81;
+    }
+
+    .status-indicator {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.8rem;
+      color: #8892b0;
+      margin-left: auto;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #ff4757;
+    }
+
+    .status-dot.connected {
+      background: #00ff88;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    /* Room Info */
+    .room-info {
+      text-align: center;
+      margin-top: 20px;
+      padding: 12px;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 10px;
+      font-size: 0.9rem;
+      color: #8892b0;
+    }
+
+    .room-info code {
+      background: rgba(0, 217, 255, 0.2);
+      padding: 4px 10px;
+      border-radius: 6px;
+      color: #00d9ff;
+      font-weight: 600;
+    }
+
+    /* Responsive */
+    @media (max-width: 900px) {
+      .video-section,
+      .captions-section {
+        grid-template-columns: 1fr;
+      }
+      
+      .settings-panel {
+        flex-direction: column;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🎥 Live Video Call with Translation</h1>
+      <p>Real-time captions and translation for seamless communication</p>
+    </header>
+
+    <!-- Settings Panel -->
+    <div class="settings-panel">
+      <div class="setting-group">
+        <label>🎤 Your Speaking Language</label>
+        <select id="myLanguage">
+          <option value="en-US">English (US)</option>
+          <option value="en-GB">English (UK)</option>
+          <option value="es-ES">Spanish (Spain)</option>
+          <option value="fr-FR">French</option>
+          <option value="de-DE">German</option>
+          <option value="it-IT">Italian</option>
+          <option value="pt-BR">Portuguese (Brazil)</option>
+          <option value="ru-RU">Russian</option>
+          <option value="zh-CN">Chinese (Mandarin)</option>
+          <option value="ja-JP">Japanese</option>
+          <option value="ko-KR">Korean</option>
+          <option value="ar-SA">Arabic</option>
+          <option value="hi-IN">Hindi</option>
+          <option value="ur-PK">Urdu</option>
+        </select>
+      </div>
+
+      <div class="setting-group">
+        <label>🌐 Translate To (for you)</label>
+        <select id="myTranslateTo">
+          <option value="ur">Urdu</option>
+          <option value="en">English</option>
+          <option value="es">Spanish</option>
+          <option value="fr">French</option>
+          <option value="de">German</option>
+          <option value="it">Italian</option>
+          <option value="pt">Portuguese</option>
+          <option value="ru">Russian</option>
+          <option value="zh">Chinese</option>
+          <option value="ja">Japanese</option>
+          <option value="ko">Korean</option>
+          <option value="ar">Arabic</option>
+          <option value="hi">Hindi</option>
+        </select>
+      </div>
+
+      <div class="setting-group">
+        <label>📝 Room ID</label>
+        <select id="roomId">
+          <option value="room1">Room 1</option>
+          <option value="room2">Room 2</option>
+          <option value="room3">Room 3</option>
+        </select>
+      </div>
+
+      <button id="startBtn" class="btn btn-primary">
+        <span>📞</span> Start Call
+      </button>
+      <button id="endBtn" class="btn btn-danger" style="display: none;">
+        <span>📵</span> End Call
+      </button>
+    </div>
+
+    <!-- Video Section -->
+    <div class="video-section">
+      <div class="video-container">
+        <video id="localVideo" autoplay playsinline muted></video>
+        <div class="video-label you">👤 You</div>
+      </div>
+      <div class="video-container">
+        <video id="remoteVideo" autoplay playsinline></video>
+        <div class="video-label peer">👥 Peer</div>
+      </div>
+    </div>
+
+    <!-- Captions Section -->
+    <div class="captions-section">
+      <!-- Your Captions Panel -->
+      <div class="caption-panel you-panel">
+        <div class="panel-header">
+          <div class="panel-icon you-icon">👤</div>
+          <div class="panel-title">Your Speech</div>
+          <div class="status-indicator">
+            <div class="status-dot" id="yourStatus"></div>
+            <span id="yourStatusText">Not Connected</span>
+          </div>
+        </div>
+        
+        <div class="caption-box">
+          <div class="caption-label">Original (What you said)</div>
+          <div class="caption-text original" id="myCaption">Waiting for speech...</div>
+        </div>
+        
+        <div class="caption-box">
+          <div class="caption-label">Translated (Sent to peer)</div>
+          <div class="caption-text translated" id="myTranslation">-</div>
+        </div>
+      </div>
+
+      <!-- Peer Captions Panel -->
+      <div class="caption-panel peer-panel">
+        <div class="panel-header">
+          <div class="panel-icon peer-icon">👥</div>
+          <div class="panel-title">Peer's Speech</div>
+          <div class="status-indicator">
+            <div class="status-dot" id="peerStatus"></div>
+            <span id="peerStatusText">Waiting for peer...</span>
+          </div>
+        </div>
+        
+        <div class="caption-box">
+          <div class="caption-label">Original (What they said)</div>
+          <div class="caption-text peer-original" id="peerCaption">Waiting for peer to speak...</div>
+        </div>
+        
+        <div class="caption-box">
+          <div class="caption-label">Translated (In your language)</div>
+          <div class="caption-text peer-translated" id="peerTranslation">-</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="room-info">
+      Connected to room: <code id="roomDisplay">room1</code> | 
+      <span id="connectionStatus">⚪ Disconnected</span>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

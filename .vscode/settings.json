@@ -1,0 +1,9 @@
+{
+    // Use the project's virtual environment as the default interpreter for this workspace
+    "python.defaultInterpreterPath": "/home/maaz-hussain/SEECS/.venv/bin/python",
+
+    // Add the backend package path to the analysis search paths to help the language server
+    "python.analysis.extraPaths": [
+        "./backend"
+    ]
+}
