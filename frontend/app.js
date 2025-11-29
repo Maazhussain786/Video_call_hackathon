@@ -1,18 +1,19 @@
 /**
- * Video Meet - WebRTC Video Call with Captions & Translation
+ * MeetFlow - WebRTC Video Conferencing with Real-time Captions
+ * 
  * Features:
  * - Join screen with name, passcode, host/participant roles
  * - WebRTC peer-to-peer video call
- * - Screen sharing
+ * - Screen sharing with face cam visible
  * - Mic/camera toggle
- * - Speech recognition captions
- * - Real-time translation
+ * - Real-time speech recognition captions
+ * - Instant translation
  */
 
 // ============================================================
 // Configuration
 // ============================================================
-const HOST = "10.7.48.13";  // Change to your server IP
+const HOST = "10.7.48.13";  // Your server IP
 const API_BASE = `http://${HOST}:8001`;
 const WS_BASE = `ws://${HOST}:8001`;
 
@@ -22,15 +23,16 @@ const WS_BASE = `ws://${HOST}:8001`;
 let userName = "";
 let roomId = "";
 let meetingPasscode = "";
-let role = "host";  // "host" or "participant"
+let role = "host";
 let hostJoined = false;
 let isCallActive = false;
+let peerName = "";
 
 // WebRTC
 let pc = null;
 let ws = null;
 let localStream = null;
-let originalVideoTrack = null;  // Store original camera track for screen share toggle
+let originalVideoTrack = null;
 
 // Media states
 let isMuted = false;
@@ -45,14 +47,13 @@ let recognition = null;
 let meetingStartTime = null;
 let timerInterval = null;
 
-// Translation cache
+// Translation - optimized for speed
 const translationCache = new Map();
-let translationTimer = null;
+let pendingTranslations = new Map();
 
 // ============================================================
 // DOM Elements
 // ============================================================
-// Join screen
 const joinScreen = document.getElementById("joinScreen");
 const meetingScreen = document.getElementById("meetingScreen");
 const userNameInput = document.getElementById("userName");
@@ -63,18 +64,19 @@ const participantBtn = document.getElementById("participantBtn");
 const joinBtn = document.getElementById("joinBtn");
 const joinError = document.getElementById("joinError");
 
-// Meeting screen
 const localVideo = document.getElementById("localVideo");
 const remoteVideo = document.getElementById("remoteVideo");
+const faceCamVideo = document.getElementById("faceCamVideo");
+const faceCamWrapper = document.getElementById("faceCamWrapper");
 const localNameBadge = document.getElementById("localNameBadge");
 const remoteNameBadge = document.getElementById("remoteNameBadge");
-const remoteCaptionName = document.getElementById("remoteCaptionName");
+const localMicStatus = document.getElementById("localMicStatus");
+const remoteMicStatus = document.getElementById("remoteMicStatus");
 const meetingIdDisplay = document.getElementById("meetingIdDisplay");
 const meetingTimer = document.getElementById("meetingTimer");
 const participantCount = document.getElementById("participantCount");
 const waitingMessage = document.getElementById("waitingMessage");
 
-// Controls
 const micBtn = document.getElementById("micBtn");
 const cameraBtn = document.getElementById("cameraBtn");
 const screenBtn = document.getElementById("screenBtn");
@@ -82,13 +84,15 @@ const leaveBtn = document.getElementById("leaveBtn");
 const spokenLangSelect = document.getElementById("spokenLang");
 const translateToSelect = document.getElementById("translateTo");
 
-// Captions
+const captionsBody = document.getElementById("captionsBody");
+const myCaptionItem = document.getElementById("myCaptionItem");
+const peerCaptionItem = document.getElementById("peerCaptionItem");
 const myCaptionDiv = document.getElementById("myCaption");
 const myTranslationDiv = document.getElementById("myTranslation");
 const peerCaptionDiv = document.getElementById("peerCaption");
 const peerTranslationDiv = document.getElementById("peerTranslation");
+const peerCaptionName = document.getElementById("peerCaptionName");
 
-// Toast
 const toast = document.getElementById("toast");
 
 // ============================================================
@@ -107,74 +111,52 @@ participantBtn.addEventListener("click", () => {
 });
 
 // ============================================================
-// Join Button Handler
+// Join Meeting
 // ============================================================
 joinBtn.addEventListener("click", async () => {
-    // Validate inputs
     userName = userNameInput.value.trim();
     roomId = meetingIdInput.value.trim();
     meetingPasscode = passcodeInput.value.trim();
     
-    if (!userName) {
-        showJoinError("Please enter your name");
-        return;
-    }
-    if (!roomId) {
-        showJoinError("Please enter a meeting ID");
-        return;
-    }
-    if (!meetingPasscode) {
-        showJoinError("Please enter a passcode");
-        return;
-    }
+    if (!userName) return showJoinError("Please enter your name");
+    if (!roomId) return showJoinError("Please enter a meeting ID");
+    if (!meetingPasscode) return showJoinError("Please enter a passcode");
     
     joinBtn.disabled = true;
-    joinBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Connecting...';
+    joinBtn.textContent = "Connecting...";
     
     try {
         await connectToMeeting();
     } catch (err) {
-        console.error("Connection error:", err);
         showJoinError(err.message || "Failed to connect");
         joinBtn.disabled = false;
-        joinBtn.innerHTML = '<i class="fas fa-video"></i> Join Meeting';
+        joinBtn.textContent = "Join Meeting";
     }
 });
 
-function showJoinError(message) {
-    joinError.textContent = message;
+function showJoinError(msg) {
+    joinError.textContent = msg;
     joinError.classList.add("show");
-    setTimeout(() => joinError.classList.remove("show"), 5000);
+    setTimeout(() => joinError.classList.remove("show"), 4000);
 }
 
 // ============================================================
 // Connect to Meeting
 // ============================================================
 async function connectToMeeting() {
-    // Request media first
+    // Get media
     try {
-        localStream = await navigator.mediaDevices.getUserMedia({ 
-            video: true, 
-            audio: true 
-        });
+        localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
         localVideo.srcObject = localStream;
         originalVideoTrack = localStream.getVideoTracks()[0];
     } catch (err) {
-        if (err.name === "NotAllowedError") {
-            throw new Error("Camera/microphone permission denied");
-        } else if (err.name === "NotFoundError") {
-            throw new Error("No camera or microphone found");
-        } else {
-            throw new Error("Could not access camera/microphone");
-        }
+        throw new Error(err.name === "NotAllowedError" ? "Camera/mic permission denied" : "Could not access camera/mic");
     }
     
-    // Connect WebSocket
     return new Promise((resolve, reject) => {
         ws = new WebSocket(`${WS_BASE}/ws/${roomId}`);
         
         ws.onopen = () => {
-            // Send join message
             ws.send(JSON.stringify({
                 type: "join",
                 name: userName,
@@ -184,18 +166,11 @@ async function connectToMeeting() {
             }));
         };
         
-        ws.onmessage = async (event) => {
-            const data = JSON.parse(event.data);
-            await handleWebSocketMessage(data, resolve, reject);
-        };
-        
-        ws.onerror = () => {
-            reject(new Error("WebSocket connection failed"));
-        };
-        
+        ws.onmessage = (e) => handleMessage(JSON.parse(e.data), resolve, reject);
+        ws.onerror = () => reject(new Error("Connection failed"));
         ws.onclose = () => {
             if (isCallActive) {
-                showToast("Disconnected from meeting");
+                showToast("Disconnected");
                 leaveMeeting();
             }
         };
@@ -205,120 +180,89 @@ async function connectToMeeting() {
 // ============================================================
 // WebSocket Message Handler
 // ============================================================
-async function handleWebSocketMessage(data, resolve, reject) {
-    console.log("Received:", data.type);
-    
+async function handleMessage(data, resolve, reject) {
     switch (data.type) {
         case "join-accepted":
-            // Successfully joined
             hostJoined = data.isHost || role === "host";
             isCallActive = true;
             showMeetingScreen();
             startMeetingTimer();
             startSpeechRecognition();
-            if (resolve) resolve();
+            resolve?.();
             showToast(`Joined as ${role}`);
             break;
             
         case "wait-for-host":
-            // Participant waiting for host
             showMeetingScreen();
-            waitingMessage.innerHTML = '<i class="fas fa-user-clock"></i><p>Waiting for host to join...</p>';
-            waitingMessage.style.display = "block";
+            waitingMessage.querySelector("p").textContent = "Waiting for host...";
             isCallActive = true;
-            if (resolve) resolve();
+            resolve?.();
             break;
             
         case "host-joined":
-            // Host has joined, participants can now connect
             hostJoined = true;
             waitingMessage.style.display = "none";
-            showToast("Host has joined the meeting");
+            showToast("Host joined");
             startSpeechRecognition();
             break;
             
         case "host-left":
-            // Host left the meeting
-            hostJoined = false;
-            showToast("Host has left the meeting");
+            showToast("Host left the meeting");
             break;
             
         case "peer-joined":
-            // Another peer joined
-            const peerName = data.name || "Participant";
-            remoteNameBadge.textContent = peerName;
-            remoteCaptionName.textContent = peerName;
+            peerName = data.name || "Participant";
+            remoteNameBadge.querySelector("span").textContent = peerName;
+            peerCaptionName.textContent = peerName;
+            peerCaptionItem.style.display = "block";
             participantCount.textContent = "2";
             waitingMessage.style.display = "none";
-            showToast(`${peerName} joined the meeting`);
-            
-            // Start WebRTC as caller
+            showToast(`${peerName} joined`);
             createPeerConnection();
             await makeOffer();
             break;
             
         case "peer-left":
-            // Peer left
-            showToast(`${data.name || "Participant"} left the meeting`);
+            showToast(`${data.name || "Peer"} left`);
             participantCount.textContent = "1";
             remoteVideo.srcObject = null;
-            remoteNameBadge.textContent = "Waiting...";
-            waitingMessage.style.display = "block";
-            waitingMessage.innerHTML = '<i class="fas fa-user-clock"></i><p>Waiting for others to join...</p>';
-            
-            // Reset peer connection
-            if (pc) {
-                pc.close();
-                pc = null;
-            }
+            remoteNameBadge.querySelector("span").textContent = "Waiting...";
+            waitingMessage.style.display = "flex";
+            peerCaptionItem.style.display = "none";
+            if (pc) { pc.close(); pc = null; }
             break;
             
         case "error":
-            if (reject) reject(new Error(data.message));
-            else showToast(data.message);
+            reject?.(new Error(data.message));
+            showToast(data.message);
             break;
             
         case "offer":
-            // Received WebRTC offer
             createPeerConnection();
             await pc.setRemoteDescription(new RTCSessionDescription(data.offer));
             const answer = await pc.createAnswer();
             await pc.setLocalDescription(answer);
             ws.send(JSON.stringify({ type: "answer", answer }));
-            
             if (data.senderName) {
-                remoteNameBadge.textContent = data.senderName;
-                remoteCaptionName.textContent = data.senderName;
+                peerName = data.senderName;
+                remoteNameBadge.querySelector("span").textContent = peerName;
+                peerCaptionName.textContent = peerName;
+                peerCaptionItem.style.display = "block";
             }
             break;
             
         case "answer":
-            // Received WebRTC answer
             await pc.setRemoteDescription(new RTCSessionDescription(data.answer));
             break;
             
         case "ice":
-            // Received ICE candidate
             if (pc && data.candidate) {
-                try {
-                    await pc.addIceCandidate(new RTCIceCandidate(data.candidate));
-                } catch (err) {
-                    console.error("ICE error:", err);
-                }
+                try { await pc.addIceCandidate(new RTCIceCandidate(data.candidate)); } catch {}
             }
             break;
             
         case "caption":
-            // Received caption from peer
             handlePeerCaption(data);
-            break;
-            
-        case "announce-name":
-            // Peer announced their name
-            if (data.senderName) {
-                remoteNameBadge.textContent = data.senderName;
-                remoteCaptionName.textContent = data.senderName;
-            }
             break;
     }
 }
@@ -329,19 +273,14 @@ async function handleWebSocketMessage(data, resolve, reject) {
 function showMeetingScreen() {
     joinScreen.style.display = "none";
     meetingScreen.classList.add("active");
-    
-    // Update UI
-    localNameBadge.textContent = userName;
+    localNameBadge.querySelector("span").textContent = userName;
     meetingIdDisplay.textContent = roomId;
-    participantCount.textContent = "1";
-    
-    // Reset join button
     joinBtn.disabled = false;
-    joinBtn.innerHTML = '<i class="fas fa-video"></i> Join Meeting';
+    joinBtn.textContent = "Join Meeting";
 }
 
 // ============================================================
-// Create Peer Connection
+// WebRTC Peer Connection
 // ============================================================
 function createPeerConnection() {
     if (pc) return;
@@ -350,36 +289,21 @@ function createPeerConnection() {
         iceServers: [{ urls: "stun:stun.l.google.com:19302" }]
     });
     
-    // Add local tracks
-    localStream.getTracks().forEach(track => {
-        pc.addTrack(track, localStream);
-    });
+    localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
     
-    // Handle remote track
-    pc.ontrack = (event) => {
-        remoteVideo.srcObject = event.streams[0];
+    pc.ontrack = (e) => {
+        remoteVideo.srcObject = e.streams[0];
         waitingMessage.style.display = "none";
         participantCount.textContent = "2";
     };
     
-    // Handle ICE candidates
-    pc.onicecandidate = (event) => {
-        if (event.candidate && ws && ws.readyState === WebSocket.OPEN) {
-            ws.send(JSON.stringify({ type: "ice", candidate: event.candidate }));
-        }
-    };
-    
-    pc.oniceconnectionstatechange = () => {
-        console.log("ICE state:", pc.iceConnectionState);
-        if (pc.iceConnectionState === "disconnected" || pc.iceConnectionState === "failed") {
-            showToast("Connection lost");
+    pc.onicecandidate = (e) => {
+        if (e.candidate && ws?.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({ type: "ice", candidate: e.candidate }));
         }
     };
 }
 
-// ============================================================
-// Make WebRTC Offer
-// ============================================================
 async function makeOffer() {
     const offer = await pc.createOffer();
     await pc.setLocalDescription(offer);
@@ -393,265 +317,178 @@ function startMeetingTimer() {
     meetingStartTime = Date.now();
     timerInterval = setInterval(() => {
         const elapsed = Date.now() - meetingStartTime;
-        const minutes = Math.floor(elapsed / 60000);
-        const seconds = Math.floor((elapsed % 60000) / 1000);
-        meetingTimer.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        const m = Math.floor(elapsed / 60000);
+        const s = Math.floor((elapsed % 60000) / 1000);
+        meetingTimer.textContent = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
     }, 1000);
 }
 
 // ============================================================
-// Control Buttons
+// Controls
 // ============================================================
-
-// Microphone Toggle
 micBtn.addEventListener("click", () => {
     isMuted = !isMuted;
+    localStream.getAudioTracks().forEach(t => t.enabled = !isMuted);
     
-    localStream.getAudioTracks().forEach(track => {
-        track.enabled = !isMuted;
-    });
-    
-    if (isMuted) {
-        micBtn.classList.add("muted");
-        micBtn.classList.remove("default");
-        micBtn.innerHTML = '<i class="fas fa-microphone-slash"></i><span class="control-btn-label">Mic</span>';
-    } else {
-        micBtn.classList.remove("muted");
-        micBtn.classList.add("default");
-        micBtn.innerHTML = '<i class="fas fa-microphone"></i><span class="control-btn-label">Mic</span>';
-    }
-    
-    showToast(isMuted ? "Microphone muted" : "Microphone unmuted");
+    micBtn.className = `control-btn ${isMuted ? 'muted' : 'default'}`;
+    micBtn.innerHTML = `<i class="fas fa-microphone${isMuted ? '-slash' : ''}"></i>`;
+    localMicStatus.style.display = isMuted ? "inline" : "none";
+    showToast(isMuted ? "Muted" : "Unmuted");
 });
 
-// Camera Toggle
 cameraBtn.addEventListener("click", () => {
     isCameraOff = !isCameraOff;
+    localStream.getVideoTracks().forEach(t => t.enabled = !isCameraOff);
     
-    localStream.getVideoTracks().forEach(track => {
-        track.enabled = !isCameraOff;
-    });
-    
-    if (isCameraOff) {
-        cameraBtn.classList.add("muted");
-        cameraBtn.classList.remove("default");
-        cameraBtn.innerHTML = '<i class="fas fa-video-slash"></i><span class="control-btn-label">Camera</span>';
-    } else {
-        cameraBtn.classList.remove("muted");
-        cameraBtn.classList.add("default");
-        cameraBtn.innerHTML = '<i class="fas fa-video"></i><span class="control-btn-label">Camera</span>';
-    }
-    
+    cameraBtn.className = `control-btn ${isCameraOff ? 'muted' : 'default'}`;
+    cameraBtn.innerHTML = `<i class="fas fa-video${isCameraOff ? '-slash' : ''}"></i>`;
     showToast(isCameraOff ? "Camera off" : "Camera on");
 });
 
-// Screen Share Toggle
+// Screen Share with Face Cam
 screenBtn.addEventListener("click", async () => {
     if (!isScreenSharing) {
-        // Start screen sharing
         try {
-            screenStream = await navigator.mediaDevices.getDisplayMedia({ 
-                video: true, 
-                audio: false 
-            });
-            
+            screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
             const screenTrack = screenStream.getVideoTracks()[0];
             
-            // Replace video track in peer connection
+            // Replace track in peer connection
             const sender = pc?.getSenders().find(s => s.track?.kind === "video");
-            if (sender) {
-                await sender.replaceTrack(screenTrack);
-            }
+            if (sender) await sender.replaceTrack(screenTrack);
             
-            // Show screen in local video
+            // Show screen in main local video
             localVideo.srcObject = screenStream;
             
-            // Handle screen share ended (user clicked "Stop sharing" in browser)
-            screenTrack.onended = () => {
-                stopScreenSharing();
-            };
+            // Show face cam in small PiP
+            faceCamVideo.srcObject = localStream;
+            faceCamWrapper.style.display = "block";
+            
+            screenTrack.onended = () => stopScreenShare();
             
             isScreenSharing = true;
             screenBtn.classList.add("active");
             screenBtn.classList.remove("default");
-            showToast("Screen sharing started");
-            
+            showToast("Screen sharing");
         } catch (err) {
-            console.error("Screen share error:", err);
-            if (err.name !== "NotAllowedError") {
-                showToast("Could not share screen");
-            }
+            if (err.name !== "NotAllowedError") showToast("Could not share screen");
         }
     } else {
-        stopScreenSharing();
+        stopScreenShare();
     }
 });
 
-function stopScreenSharing() {
+function stopScreenShare() {
     if (!isScreenSharing) return;
     
-    // Stop screen stream
-    if (screenStream) {
-        screenStream.getTracks().forEach(track => track.stop());
-        screenStream = null;
-    }
+    screenStream?.getTracks().forEach(t => t.stop());
+    screenStream = null;
     
-    // Replace back with camera track
     const sender = pc?.getSenders().find(s => s.track?.kind === "video");
-    if (sender && originalVideoTrack) {
-        sender.replaceTrack(originalVideoTrack);
-    }
+    if (sender && originalVideoTrack) sender.replaceTrack(originalVideoTrack);
     
-    // Show camera in local video
     localVideo.srcObject = localStream;
+    faceCamWrapper.style.display = "none";
     
     isScreenSharing = false;
     screenBtn.classList.remove("active");
     screenBtn.classList.add("default");
-    showToast("Screen sharing stopped");
+    showToast("Screen share stopped");
 }
 
 // Leave Meeting
-leaveBtn.addEventListener("click", () => {
-    leaveMeeting();
-});
+leaveBtn.addEventListener("click", leaveMeeting);
 
 function leaveMeeting() {
     isCallActive = false;
-    hostJoined = false;
     
-    // Stop speech recognition
-    if (recognition) {
-        recognition.stop();
-        recognition = null;
-    }
+    recognition?.stop();
+    recognition = null;
     
-    // Stop timer
-    if (timerInterval) {
-        clearInterval(timerInterval);
-        timerInterval = null;
-    }
+    if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+    if (pc) { pc.close(); pc = null; }
+    if (ws) { ws.close(); ws = null; }
     
-    // Close peer connection
-    if (pc) {
-        pc.close();
-        pc = null;
-    }
+    localStream?.getTracks().forEach(t => t.stop());
+    screenStream?.getTracks().forEach(t => t.stop());
+    localStream = screenStream = null;
     
-    // Close WebSocket
-    if (ws) {
-        ws.close();
-        ws = null;
-    }
+    localVideo.srcObject = remoteVideo.srcObject = null;
     
-    // Stop all streams
-    if (localStream) {
-        localStream.getTracks().forEach(track => track.stop());
-        localStream = null;
-    }
-    if (screenStream) {
-        screenStream.getTracks().forEach(track => track.stop());
-        screenStream = null;
-    }
+    // Reset UI
+    isMuted = isCameraOff = isScreenSharing = false;
+    micBtn.className = "control-btn default";
+    micBtn.innerHTML = '<i class="fas fa-microphone"></i>';
+    cameraBtn.className = "control-btn default";
+    cameraBtn.innerHTML = '<i class="fas fa-video"></i>';
+    screenBtn.className = "control-btn default";
+    localMicStatus.style.display = "none";
+    faceCamWrapper.style.display = "none";
     
-    // Clear videos
-    localVideo.srcObject = null;
-    remoteVideo.srcObject = null;
-    
-    // Reset UI states
-    isMuted = false;
-    isCameraOff = false;
-    isScreenSharing = false;
-    micBtn.classList.remove("muted");
-    micBtn.classList.add("default");
-    micBtn.innerHTML = '<i class="fas fa-microphone"></i><span class="control-btn-label">Mic</span>';
-    cameraBtn.classList.remove("muted");
-    cameraBtn.classList.add("default");
-    cameraBtn.innerHTML = '<i class="fas fa-video"></i><span class="control-btn-label">Camera</span>';
-    screenBtn.classList.remove("active");
-    screenBtn.classList.add("default");
-    
-    // Reset captions
-    myCaptionDiv.textContent = "-";
+    myCaptionDiv.textContent = "Speak to see captions...";
     myTranslationDiv.textContent = "";
-    peerCaptionDiv.textContent = "-";
-    peerTranslationDiv.textContent = "";
+    peerCaptionItem.style.display = "none";
+    waitingMessage.style.display = "flex";
     
-    // Show join screen
     meetingScreen.classList.remove("active");
     joinScreen.style.display = "flex";
-    waitingMessage.style.display = "block";
-    
-    showToast("Left the meeting");
 }
 
 // ============================================================
-// Speech Recognition
+// Speech Recognition - Optimized for Real-time
 // ============================================================
 function startSpeechRecognition() {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    
-    if (!SpeechRecognition) {
-        console.warn("Speech recognition not supported");
-        return;
-    }
+    if (!SpeechRecognition) return;
     
     recognition = new SpeechRecognition();
     recognition.lang = spokenLangSelect.value;
     recognition.continuous = true;
     recognition.interimResults = true;
     
-    recognition.onresult = (event) => {
-        let interimTranscript = "";
-        let finalTranscript = "";
+    let lastInterim = "";
+    
+    recognition.onresult = (e) => {
+        let interim = "", final = "";
         
-        for (let i = event.resultIndex; i < event.results.length; i++) {
-            const transcript = event.results[i][0].transcript;
-            if (event.results[i].isFinal) {
-                finalTranscript += transcript;
-            } else {
-                interimTranscript += transcript;
-            }
+        for (let i = e.resultIndex; i < e.results.length; i++) {
+            const t = e.results[i][0].transcript;
+            if (e.results[i].isFinal) final += t;
+            else interim += t;
         }
         
-        if (finalTranscript) {
-            myCaptionDiv.textContent = finalTranscript;
+        // Show interim results immediately (real-time feel)
+        if (interim && interim !== lastInterim) {
+            myCaptionDiv.textContent = interim;
+            myCaptionDiv.style.opacity = "0.7";
+            lastInterim = interim;
+        }
+        
+        // Process final results
+        if (final) {
+            myCaptionDiv.textContent = final;
             myCaptionDiv.style.opacity = "1";
+            lastInterim = "";
             
-            // Send to peer
-            if (ws && ws.readyState === WebSocket.OPEN) {
-                ws.send(JSON.stringify({
-                    type: "caption",
-                    text: finalTranscript,
-                    sourceLang: spokenLangSelect.value.split("-")[0]
-                }));
-            }
+            // Send to peer immediately
+            ws?.readyState === WebSocket.OPEN && ws.send(JSON.stringify({
+                type: "caption",
+                text: final,
+                sourceLang: spokenLangSelect.value.split("-")[0]
+            }));
             
-            // Translate
-            debouncedTranslate(finalTranscript, "my");
+            // Translate in parallel (non-blocking)
+            translateAsync(final, "my");
             
-        } else if (interimTranscript) {
-            myCaptionDiv.textContent = interimTranscript;
-            myCaptionDiv.style.opacity = "0.6";
+            // Scroll captions
+            captionsBody.scrollTop = captionsBody.scrollHeight;
         }
     };
     
-    recognition.onerror = (event) => {
-        console.error("Speech recognition error:", event.error);
-    };
-    
-    recognition.onend = () => {
-        if (isCallActive && recognition) {
-            try {
-                recognition.start();
-            } catch (e) {}
-        }
-    };
-    
+    recognition.onerror = () => {};
+    recognition.onend = () => { if (isCallActive) try { recognition.start(); } catch {} };
     recognition.start();
 }
 
-// Language change handler
 spokenLangSelect.addEventListener("change", () => {
     if (recognition && isCallActive) {
         recognition.stop();
@@ -665,86 +502,80 @@ spokenLangSelect.addEventListener("change", () => {
 // ============================================================
 // Handle Peer Caption
 // ============================================================
-async function handlePeerCaption(data) {
+function handlePeerCaption(data) {
     peerCaptionDiv.textContent = data.text;
+    peerCaptionItem.style.display = "block";
     
-    const sourceLang = data.sourceLang || "en";
-    const targetLang = translateToSelect.value;
+    // Translate in parallel
+    translateAsync(data.text, "peer", data.sourceLang || "en");
     
-    if (sourceLang !== targetLang) {
-        peerTranslationDiv.textContent = "translating...";
-        const translated = await translateText(data.text, sourceLang, targetLang);
-        peerTranslationDiv.textContent = translated;
-    } else {
-        peerTranslationDiv.textContent = "";
+    captionsBody.scrollTop = captionsBody.scrollHeight;
+}
+
+// ============================================================
+// Translation - Optimized for Speed
+// ============================================================
+async function translateAsync(text, target, sourceLang = null) {
+    const src = sourceLang || spokenLangSelect.value.split("-")[0];
+    const tgt = translateToSelect.value;
+    
+    if (src === tgt) {
+        if (target === "my") myTranslationDiv.textContent = "";
+        else peerTranslationDiv.textContent = "";
+        return;
     }
-}
-
-// ============================================================
-// Translation
-// ============================================================
-function debouncedTranslate(text, target) {
-    clearTimeout(translationTimer);
-    translationTimer = setTimeout(async () => {
-        const sourceLang = spokenLangSelect.value.split("-")[0];
-        const targetLang = translateToSelect.value;
-        
-        if (sourceLang !== targetLang) {
-            const translated = await translateText(text, sourceLang, targetLang);
-            if (target === "my") {
-                myTranslationDiv.textContent = translated;
-            }
-        } else {
-            myTranslationDiv.textContent = "";
-        }
-    }, 300);
-}
-
-async function translateText(text, sourceLang, targetLang) {
-    const cacheKey = `${text}|${sourceLang}|${targetLang}`;
+    
+    const cacheKey = `${text}|${src}|${tgt}`;
+    
+    // Check cache first (instant)
     if (translationCache.has(cacheKey)) {
-        return translationCache.get(cacheKey);
+        const translated = translationCache.get(cacheKey);
+        if (target === "my") myTranslationDiv.textContent = translated;
+        else peerTranslationDiv.textContent = translated;
+        return;
     }
+    
+    // Show loading indicator
+    const targetDiv = target === "my" ? myTranslationDiv : peerTranslationDiv;
+    targetDiv.textContent = "...";
     
     try {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 5000);
+        setTimeout(() => controller.abort(), 4000);
         
         const res = await fetch(`${API_BASE}/translate`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ text, source_lang: sourceLang, target_lang: targetLang }),
+            body: JSON.stringify({ text, source_lang: src, target_lang: tgt }),
             signal: controller.signal
         });
         
-        clearTimeout(timeoutId);
         const data = await res.json();
         const translated = data.translated || text;
         
+        // Cache result
         translationCache.set(cacheKey, translated);
-        if (translationCache.size > 200) {
-            const firstKey = translationCache.keys().next().value;
-            translationCache.delete(firstKey);
+        if (translationCache.size > 300) {
+            const first = translationCache.keys().next().value;
+            translationCache.delete(first);
         }
         
-        return translated;
-    } catch (err) {
-        console.error("Translation error:", err);
-        return text;
+        targetDiv.textContent = translated;
+    } catch {
+        targetDiv.textContent = "";
     }
 }
 
 // ============================================================
-// Toast Notification
+// Toast
 // ============================================================
-function showToast(message) {
-    toast.textContent = message;
+function showToast(msg) {
+    toast.textContent = msg;
     toast.classList.add("show");
-    setTimeout(() => toast.classList.remove("show"), 3000);
+    setTimeout(() => toast.classList.remove("show"), 2500);
 }
 
 // ============================================================
-// Initialize
+// Init
 // ============================================================
-console.log("Video Meet initialized");
-console.log("Server:", HOST);
+console.log("MeetFlow initialized | Server:", HOST);
