@@ -3,9 +3,27 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Video Call with Live Translation</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <title>MeetFlow - Video Conferencing</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
+    :root {
+      --bg-primary: #0f0f0f;
+      --bg-secondary: #1a1a1a;
+      --bg-tertiary: #252525;
+      --bg-hover: #2d2d2d;
+      --accent: #00a884;
+      --accent-hover: #00c49a;
+      --danger: #ef4444;
+      --danger-hover: #dc2626;
+      --text-primary: #ffffff;
+      --text-secondary: #a1a1a1;
+      --text-muted: #6b6b6b;
+      --border: #333333;
+      --success: #22c55e;
+      --warning: #f59e0b;
+    }
+
     * {
       margin: 0;
       padding: 0;
@@ -13,458 +31,792 @@
     }
 
     body {
-      font-family: 'Inter', sans-serif;
-      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
       min-height: 100vh;
-      color: #fff;
-      padding: 20px;
+      overflow: hidden;
     }
 
-    .container {
-      max-width: 1400px;
-      margin: 0 auto;
+    /* ==================== JOIN SCREEN ==================== */
+    .join-screen {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: 
+        radial-gradient(ellipse at top left, rgba(0, 168, 132, 0.1) 0%, transparent 50%),
+        radial-gradient(ellipse at bottom right, rgba(59, 130, 246, 0.08) 0%, transparent 50%),
+        var(--bg-primary);
     }
 
-    header {
-      text-align: center;
-      margin-bottom: 30px;
+    .join-container {
+      display: flex;
+      gap: 60px;
+      align-items: center;
+      max-width: 900px;
+      padding: 40px;
     }
 
-    header h1 {
-      font-size: 2rem;
+    .join-branding {
+      flex: 1;
+    }
+
+    .join-branding .logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .join-branding .logo-icon {
+      width: 48px;
+      height: 48px;
+      background: linear-gradient(135deg, var(--accent), #3b82f6);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+    }
+
+    .join-branding .logo-text {
+      font-size: 1.75rem;
       font-weight: 700;
-      background: linear-gradient(90deg, #00d9ff, #00ff88);
+      background: linear-gradient(135deg, var(--accent), #3b82f6);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
-      background-clip: text;
     }
 
-    header p {
-      color: #8892b0;
-      margin-top: 8px;
+    .join-branding h2 {
+      font-size: 2.5rem;
+      font-weight: 600;
+      line-height: 1.2;
+      margin-bottom: 16px;
     }
 
-    /* Settings Panel */
-    .settings-panel {
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      border-radius: 16px;
-      padding: 20px;
-      margin-bottom: 24px;
-      display: flex;
-      flex-wrap: wrap;
-      gap: 20px;
-      align-items: flex-end;
+    .join-branding p {
+      color: var(--text-secondary);
+      font-size: 1.1rem;
+      line-height: 1.6;
     }
 
-    .setting-group {
-      flex: 1;
-      min-width: 200px;
+    .join-card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 36px;
+      width: 380px;
     }
 
-    .setting-group label {
+    .join-card h3 {
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin-bottom: 28px;
+      text-align: center;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-group label {
       display: block;
-      font-size: 0.85rem;
-      color: #8892b0;
-      margin-bottom: 8px;
+      font-size: 0.8rem;
       font-weight: 500;
+      color: var(--text-secondary);
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
     }
 
-    .setting-group select {
+    .form-group input {
       width: 100%;
+      padding: 14px 16px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--bg-tertiary);
+      color: var(--text-primary);
+      font-size: 0.95rem;
+      transition: all 0.2s;
+    }
+
+    .form-group input:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(0, 168, 132, 0.15);
+    }
+
+    .form-group input::placeholder {
+      color: var(--text-muted);
+    }
+
+    .role-selector {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 24px;
+    }
+
+    .role-btn {
+      flex: 1;
       padding: 12px 16px;
       border-radius: 10px;
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      background: rgba(255, 255, 255, 0.1);
-      color: #fff;
-      font-size: 0.95rem;
+      border: 2px solid var(--border);
+      background: transparent;
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+      font-weight: 500;
       cursor: pointer;
-      transition: all 0.3s ease;
-    }
-
-    .setting-group select:hover {
-      border-color: #00d9ff;
-    }
-
-    .setting-group select:focus {
-      outline: none;
-      border-color: #00d9ff;
-      box-shadow: 0 0 0 3px rgba(0, 217, 255, 0.2);
-    }
-
-    .setting-group select option {
-      background: #1a1a2e;
-      color: #fff;
-    }
-
-    .btn {
-      padding: 14px 32px;
-      border-radius: 10px;
-      border: none;
-      font-size: 1rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      display: inline-flex;
+      transition: all 0.2s;
+      display: flex;
       align-items: center;
+      justify-content: center;
       gap: 8px;
     }
 
-    .btn-primary {
-      background: linear-gradient(135deg, #00d9ff, #00ff88);
-      color: #1a1a2e;
+    .role-btn:hover {
+      border-color: var(--accent);
+      color: var(--text-primary);
     }
 
-    .btn-primary:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 10px 30px rgba(0, 217, 255, 0.3);
+    .role-btn.selected {
+      border-color: var(--accent);
+      background: rgba(0, 168, 132, 0.15);
+      color: var(--accent);
     }
 
-    .btn-primary:disabled {
-      opacity: 0.5;
+    .join-btn {
+      width: 100%;
+      padding: 14px;
+      border-radius: 10px;
+      border: none;
+      background: linear-gradient(135deg, var(--accent), #00c49a);
+      color: white;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .join-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 8px 24px rgba(0, 168, 132, 0.3);
+    }
+
+    .join-btn:disabled {
+      opacity: 0.6;
       cursor: not-allowed;
       transform: none;
     }
 
-    .btn-danger {
-      background: linear-gradient(135deg, #ff4757, #ff6b81);
-      color: #fff;
-    }
-
-    .btn-danger:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 10px 30px rgba(255, 71, 87, 0.3);
-    }
-
-    /* Video Section */
-    .video-section {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 24px;
-      margin-bottom: 24px;
-    }
-
-    .video-container {
-      background: rgba(0, 0, 0, 0.3);
-      border-radius: 16px;
-      overflow: hidden;
-      position: relative;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-    }
-
-    .video-container video {
-      width: 100%;
-      aspect-ratio: 16/9;
-      object-fit: cover;
-      display: block;
-      background: #000;
-    }
-
-    .video-label {
-      position: absolute;
-      bottom: 12px;
-      left: 12px;
-      background: rgba(0, 0, 0, 0.7);
-      padding: 6px 14px;
-      border-radius: 20px;
+    .error-msg {
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid var(--danger);
+      color: #fca5a5;
+      padding: 12px 16px;
+      border-radius: 8px;
+      margin-bottom: 16px;
       font-size: 0.85rem;
-      font-weight: 500;
-      backdrop-filter: blur(10px);
+      display: none;
     }
 
-    .video-label.you {
-      background: linear-gradient(135deg, rgba(0, 217, 255, 0.8), rgba(0, 255, 136, 0.8));
-      color: #1a1a2e;
+    .error-msg.show { display: block; }
+
+    /* ==================== MEETING SCREEN ==================== */
+    .meeting-screen {
+      display: none;
+      flex-direction: column;
+      height: 100vh;
+      background: var(--bg-primary);
     }
 
-    .video-label.peer {
-      background: linear-gradient(135deg, rgba(255, 71, 87, 0.8), rgba(255, 107, 129, 0.8));
-      color: #fff;
-    }
+    .meeting-screen.active { display: flex; }
 
-    /* Captions Section */
-    .captions-section {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 24px;
-    }
-
-    .caption-panel {
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      border-radius: 16px;
-      padding: 20px;
-      min-height: 200px;
-    }
-
-    .caption-panel.you-panel {
-      border-left: 4px solid #00d9ff;
-    }
-
-    .caption-panel.peer-panel {
-      border-left: 4px solid #ff4757;
-    }
-
-    .panel-header {
+    /* Header */
+    .meeting-header {
+      height: 56px;
+      background: var(--bg-secondary);
       display: flex;
       align-items: center;
-      gap: 10px;
-      margin-bottom: 16px;
-      padding-bottom: 12px;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      justify-content: space-between;
+      padding: 0 20px;
+      border-bottom: 1px solid var(--border);
     }
 
-    .panel-icon {
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
+    .header-left {
       display: flex;
       align-items: center;
-      justify-content: center;
-      font-size: 0.9rem;
+      gap: 16px;
     }
 
-    .panel-icon.you-icon {
-      background: linear-gradient(135deg, #00d9ff, #00ff88);
-      color: #1a1a2e;
-    }
-
-    .panel-icon.peer-icon {
-      background: linear-gradient(135deg, #ff4757, #ff6b81);
-      color: #fff;
-    }
-
-    .panel-title {
+    .header-logo {
+      display: flex;
+      align-items: center;
+      gap: 8px;
       font-weight: 600;
-      font-size: 1rem;
+      color: var(--accent);
     }
 
-    .caption-box {
-      margin-bottom: 16px;
+    .meeting-info-badge {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--bg-tertiary);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 0.85rem;
     }
 
-    .caption-label {
-      font-size: 0.75rem;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      color: #8892b0;
-      margin-bottom: 8px;
-      font-weight: 600;
+    .meeting-info-badge i { color: var(--text-muted); }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
     }
 
-    .caption-text {
-      background: rgba(0, 0, 0, 0.3);
-      border-radius: 10px;
-      padding: 14px;
-      min-height: 60px;
-      font-size: 1rem;
-      line-height: 1.5;
-      color: #e6e6e6;
+    .participant-badge {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.85rem;
+      color: var(--text-secondary);
     }
 
-    .caption-text.original {
-      border-left: 3px solid #00d9ff;
-    }
-
-    .caption-text.translated {
-      border-left: 3px solid #00ff88;
-    }
-
-    .caption-text.peer-original {
-      border-left: 3px solid #ff4757;
-    }
-
-    .caption-text.peer-translated {
-      border-left: 3px solid #ff6b81;
-    }
-
-    .status-indicator {
-      display: inline-flex;
+    .live-indicator {
+      display: flex;
       align-items: center;
       gap: 6px;
       font-size: 0.8rem;
-      color: #8892b0;
-      margin-left: auto;
+      color: var(--danger);
+      font-weight: 500;
     }
 
-    .status-dot {
+    .live-dot {
       width: 8px;
       height: 8px;
+      background: var(--danger);
       border-radius: 50%;
-      background: #ff4757;
-    }
-
-    .status-dot.connected {
-      background: #00ff88;
-      animation: pulse 2s infinite;
+      animation: pulse 1.5s infinite;
     }
 
     @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.5; }
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.7; transform: scale(1.1); }
     }
 
-    /* Room Info */
-    .room-info {
-      text-align: center;
-      margin-top: 20px;
-      padding: 12px;
-      background: rgba(255, 255, 255, 0.05);
-      border-radius: 10px;
-      font-size: 0.9rem;
-      color: #8892b0;
+    /* Video Area */
+    .video-area {
+      flex: 1;
+      display: flex;
+      padding: 16px;
+      gap: 16px;
+      background: var(--bg-primary);
+      position: relative;
     }
 
-    .room-info code {
-      background: rgba(0, 217, 255, 0.2);
-      padding: 4px 10px;
+    .main-video-container {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+
+    .video-wrapper {
+      position: relative;
+      border-radius: 16px;
+      overflow: hidden;
+      background: var(--bg-tertiary);
+    }
+
+    .video-wrapper video {
+      display: block;
+      background: #000;
+      object-fit: cover;
+    }
+
+    .video-wrapper.main {
+      width: 100%;
+      max-width: 1100px;
+      aspect-ratio: 16/9;
+    }
+
+    .video-wrapper.main video {
+      width: 100%;
+      height: 100%;
+    }
+
+    /* Self View (floating) */
+    .self-view-container {
+      position: absolute;
+      right: 20px;
+      bottom: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      z-index: 20;
+    }
+
+    .video-wrapper.self {
+      width: 200px;
+      border: 2px solid var(--border);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    }
+
+    .video-wrapper.self video {
+      width: 100%;
+      height: 130px;
+    }
+
+    /* Screen share face cam */
+    .video-wrapper.face-cam {
+      width: 140px;
+      border: 2px solid var(--accent);
+    }
+
+    .video-wrapper.face-cam video {
+      width: 100%;
+      height: 90px;
+    }
+
+    .name-badge {
+      position: absolute;
+      bottom: 10px;
+      left: 10px;
+      background: rgba(0, 0, 0, 0.75);
+      padding: 5px 10px;
       border-radius: 6px;
-      color: #00d9ff;
+      font-size: 0.8rem;
+      color: white;
+      backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .name-badge .mic-status {
+      color: var(--danger);
+      font-size: 0.7rem;
+    }
+
+    .waiting-overlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: var(--bg-tertiary);
+      border-radius: 16px;
+    }
+
+    .waiting-overlay i {
+      font-size: 3rem;
+      color: var(--text-muted);
+      margin-bottom: 16px;
+    }
+
+    .waiting-overlay p {
+      color: var(--text-secondary);
+      font-size: 1rem;
+    }
+
+    /* Captions Panel */
+    .captions-panel {
+      width: 320px;
+      background: var(--bg-secondary);
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .captions-header {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .captions-header h4 {
+      font-size: 0.9rem;
       font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .captions-header h4 i {
+      color: var(--accent);
+    }
+
+    .lang-selects {
+      display: flex;
+      gap: 6px;
+    }
+
+    .lang-select {
+      padding: 4px 8px;
+      border-radius: 4px;
+      border: 1px solid var(--border);
+      background: var(--bg-tertiary);
+      color: var(--text-secondary);
+      font-size: 0.75rem;
+      cursor: pointer;
+    }
+
+    .lang-select:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    .captions-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px;
+    }
+
+    .caption-item {
+      margin-bottom: 16px;
+      padding: 12px;
+      background: var(--bg-tertiary);
+      border-radius: 10px;
+      border-left: 3px solid var(--accent);
+    }
+
+    .caption-item.peer {
+      border-left-color: #3b82f6;
+    }
+
+    .caption-item .speaker {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .caption-item .original {
+      font-size: 0.9rem;
+      color: var(--text-primary);
+      line-height: 1.4;
+      margin-bottom: 6px;
+    }
+
+    .caption-item .translated {
+      font-size: 0.85rem;
+      color: var(--success);
+      font-style: italic;
+      line-height: 1.4;
+    }
+
+    .caption-item .translated:empty {
+      display: none;
+    }
+
+    /* Control Bar */
+    .control-bar {
+      height: 72px;
+      background: var(--bg-secondary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      border-top: 1px solid var(--border);
+      padding: 0 20px;
+    }
+
+    .control-btn {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+      transition: all 0.15s;
+      position: relative;
+    }
+
+    .control-btn.default {
+      background: var(--bg-tertiary);
+      color: var(--text-primary);
+    }
+
+    .control-btn.default:hover {
+      background: var(--bg-hover);
+    }
+
+    .control-btn.active {
+      background: var(--accent);
+      color: white;
+    }
+
+    .control-btn.muted {
+      background: var(--danger);
+      color: white;
+    }
+
+    .control-btn.muted:hover {
+      background: var(--danger-hover);
+    }
+
+    .control-btn.leave {
+      background: var(--danger);
+      color: white;
+      width: auto;
+      padding: 0 20px;
+      border-radius: 24px;
+      gap: 8px;
+      font-size: 0.9rem;
+      font-weight: 500;
+      margin-left: 16px;
+    }
+
+    .control-btn.leave:hover {
+      background: var(--danger-hover);
+    }
+
+    .control-divider {
+      width: 1px;
+      height: 32px;
+      background: var(--border);
+      margin: 0 8px;
+    }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      bottom: 90px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: var(--bg-tertiary);
+      color: var(--text-primary);
+      padding: 12px 20px;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      border: 1px solid var(--border);
+      opacity: 0;
+      transition: all 0.3s;
+      z-index: 1000;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
     }
 
     /* Responsive */
-    @media (max-width: 900px) {
-      .video-section,
-      .captions-section {
-        grid-template-columns: 1fr;
+    @media (max-width: 1024px) {
+      .join-container {
+        flex-direction: column;
+        gap: 40px;
       }
       
-      .settings-panel {
-        flex-direction: column;
+      .join-branding {
+        text-align: center;
+      }
+      
+      .captions-panel {
+        display: none;
+      }
+      
+      .video-wrapper.self {
+        width: 140px;
+      }
+      
+      .video-wrapper.self video {
+        height: 90px;
       }
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <header>
-      <h1>🎥 Live Video Call with Translation</h1>
-      <p>Real-time captions and translation for seamless communication</p>
-    </header>
 
-    <!-- Settings Panel -->
-    <div class="settings-panel">
-      <div class="setting-group">
-        <label>🎤 Your Speaking Language</label>
-        <select id="myLanguage">
-          <option value="en-US">English (US)</option>
-          <option value="en-GB">English (UK)</option>
-          <option value="es-ES">Spanish (Spain)</option>
-          <option value="fr-FR">French</option>
-          <option value="de-DE">German</option>
-          <option value="it-IT">Italian</option>
-          <option value="pt-BR">Portuguese (Brazil)</option>
-          <option value="ru-RU">Russian</option>
-          <option value="zh-CN">Chinese (Mandarin)</option>
-          <option value="ja-JP">Japanese</option>
-          <option value="ko-KR">Korean</option>
-          <option value="ar-SA">Arabic</option>
-          <option value="hi-IN">Hindi</option>
-          <option value="ur-PK">Urdu</option>
-        </select>
+  <!-- ==================== JOIN SCREEN ==================== -->
+  <div class="join-screen" id="joinScreen">
+    <div class="join-container">
+      <div class="join-branding">
+        <div class="logo">
+          <div class="logo-icon"><i class="fas fa-video"></i></div>
+          <span class="logo-text">MeetFlow</span>
+        </div>
+        <h2>Connect with anyone,<br>anywhere</h2>
+        <p>High-quality video meetings with real-time captions and translation. Simple, secure, and free.</p>
       </div>
-
-      <div class="setting-group">
-        <label>🌐 Translate To (for you)</label>
-        <select id="myTranslateTo">
-          <option value="ur">Urdu</option>
-          <option value="en">English</option>
-          <option value="es">Spanish</option>
-          <option value="fr">French</option>
-          <option value="de">German</option>
-          <option value="it">Italian</option>
-          <option value="pt">Portuguese</option>
-          <option value="ru">Russian</option>
-          <option value="zh">Chinese</option>
-          <option value="ja">Japanese</option>
-          <option value="ko">Korean</option>
-          <option value="ar">Arabic</option>
-          <option value="hi">Hindi</option>
-        </select>
-      </div>
-
-      <div class="setting-group">
-        <label>📝 Room ID</label>
-        <select id="roomId">
-          <option value="room1">Room 1</option>
-          <option value="room2">Room 2</option>
-          <option value="room3">Room 3</option>
-        </select>
-      </div>
-
-      <button id="startBtn" class="btn btn-primary">
-        <span>📞</span> Start Call
-      </button>
-      <button id="endBtn" class="btn btn-danger" style="display: none;">
-        <span>📵</span> End Call
-      </button>
-    </div>
-
-    <!-- Video Section -->
-    <div class="video-section">
-      <div class="video-container">
-        <video id="localVideo" autoplay playsinline muted></video>
-        <div class="video-label you">👤 You</div>
-      </div>
-      <div class="video-container">
-        <video id="remoteVideo" autoplay playsinline></video>
-        <div class="video-label peer">👥 Peer</div>
-      </div>
-    </div>
-
-    <!-- Captions Section -->
-    <div class="captions-section">
-      <!-- Your Captions Panel -->
-      <div class="caption-panel you-panel">
-        <div class="panel-header">
-          <div class="panel-icon you-icon">👤</div>
-          <div class="panel-title">Your Speech</div>
-          <div class="status-indicator">
-            <div class="status-dot" id="yourStatus"></div>
-            <span id="yourStatusText">Not Connected</span>
-          </div>
+      
+      <div class="join-card">
+        <h3>Join or Start a Meeting</h3>
+        
+        <div class="error-msg" id="joinError"></div>
+        
+        <div class="form-group">
+          <label>Your Name</label>
+          <input type="text" id="userName" placeholder="Enter your display name" maxlength="30">
         </div>
         
-        <div class="caption-box">
-          <div class="caption-label">Original (What you said)</div>
-          <div class="caption-text original" id="myCaption">Waiting for speech...</div>
+        <div class="form-group">
+          <label>Meeting ID</label>
+          <input type="text" id="meetingId" placeholder="e.g. team-standup">
         </div>
         
-        <div class="caption-box">
-          <div class="caption-label">Translated (Sent to peer)</div>
-          <div class="caption-text translated" id="myTranslation">-</div>
+        <div class="form-group">
+          <label>Passcode</label>
+          <input type="password" id="passcode" placeholder="Meeting passcode">
         </div>
+        
+        <label style="display: block; font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px;">Role</label>
+        <div class="role-selector">
+          <button class="role-btn selected" id="hostBtn" data-role="host">
+            <i class="fas fa-crown"></i> Host
+          </button>
+          <button class="role-btn" id="participantBtn" data-role="participant">
+            <i class="fas fa-user"></i> Participant
+          </button>
+        </div>
+        
+        <button class="join-btn" id="joinBtn">
+          Join Meeting
+        </button>
       </div>
-
-      <!-- Peer Captions Panel -->
-      <div class="caption-panel peer-panel">
-        <div class="panel-header">
-          <div class="panel-icon peer-icon">👥</div>
-          <div class="panel-title">Peer's Speech</div>
-          <div class="status-indicator">
-            <div class="status-dot" id="peerStatus"></div>
-            <span id="peerStatusText">Waiting for peer...</span>
-          </div>
-        </div>
-        
-        <div class="caption-box">
-          <div class="caption-label">Original (What they said)</div>
-          <div class="caption-text peer-original" id="peerCaption">Waiting for peer to speak...</div>
-        </div>
-        
-        <div class="caption-box">
-          <div class="caption-label">Translated (In your language)</div>
-          <div class="caption-text peer-translated" id="peerTranslation">-</div>
-        </div>
-      </div>
-    </div>
-
-    <div class="room-info">
-      Connected to room: <code id="roomDisplay">room1</code> | 
-      <span id="connectionStatus">⚪ Disconnected</span>
     </div>
   </div>
+
+  <!-- ==================== MEETING SCREEN ==================== -->
+  <div class="meeting-screen" id="meetingScreen">
+    <!-- Header -->
+    <header class="meeting-header">
+      <div class="header-left">
+        <div class="header-logo">
+          <i class="fas fa-video"></i>
+          <span>MeetFlow</span>
+        </div>
+        <div class="meeting-info-badge">
+          <i class="fas fa-lock"></i>
+          <span id="meetingIdDisplay">Meeting</span>
+        </div>
+        <div class="meeting-info-badge">
+          <i class="fas fa-clock"></i>
+          <span id="meetingTimer">00:00</span>
+        </div>
+      </div>
+      <div class="header-right">
+        <div class="live-indicator">
+          <span class="live-dot"></span>
+          LIVE
+        </div>
+        <div class="participant-badge">
+          <i class="fas fa-users"></i>
+          <span id="participantCount">1</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Video Area -->
+    <main class="video-area">
+      <div class="main-video-container">
+        <!-- Remote Video (Main) -->
+        <div class="video-wrapper main" id="remoteVideoWrapper">
+          <video id="remoteVideo" autoplay playsinline></video>
+          <div class="name-badge" id="remoteNameBadge">
+            <span>Waiting...</span>
+            <i class="fas fa-microphone-slash mic-status" id="remoteMicStatus" style="display:none;"></i>
+          </div>
+          <div class="waiting-overlay" id="waitingMessage">
+            <i class="fas fa-user-clock"></i>
+            <p>Waiting for others to join...</p>
+          </div>
+        </div>
+        
+        <!-- Self View (Floating) -->
+        <div class="self-view-container" id="selfViewContainer">
+          <div class="video-wrapper self" id="localVideoWrapper">
+            <video id="localVideo" autoplay playsinline muted></video>
+            <div class="name-badge" id="localNameBadge">
+              <span>You</span>
+              <i class="fas fa-microphone-slash mic-status" id="localMicStatus" style="display:none;"></i>
+            </div>
+          </div>
+          <!-- Face cam during screen share -->
+          <div class="video-wrapper face-cam" id="faceCamWrapper" style="display:none;">
+            <video id="faceCamVideo" autoplay playsinline muted></video>
+          </div>
+        </div>
+      </div>
+
+      <!-- Captions Panel -->
+      <div class="captions-panel">
+        <div class="captions-header">
+          <h4><i class="fas fa-closed-captioning"></i> Live Captions</h4>
+          <div class="lang-selects">
+            <select class="lang-select" id="spokenLang" title="Speaking">
+              <option value="en-US">EN</option>
+              <option value="ur-PK">UR</option>
+              <option value="hi-IN">HI</option>
+              <option value="es-ES">ES</option>
+              <option value="fr-FR">FR</option>
+              <option value="de-DE">DE</option>
+              <option value="zh-CN">ZH</option>
+              <option value="ar-SA">AR</option>
+            </select>
+            <span style="color: var(--text-muted);">→</span>
+            <select class="lang-select" id="translateTo" title="Translate to">
+              <option value="ur">UR</option>
+              <option value="en">EN</option>
+              <option value="hi">HI</option>
+              <option value="es">ES</option>
+              <option value="fr">FR</option>
+              <option value="de">DE</option>
+              <option value="zh">ZH</option>
+              <option value="ar">AR</option>
+            </select>
+          </div>
+        </div>
+        <div class="captions-body" id="captionsBody">
+          <div class="caption-item" id="myCaptionItem">
+            <div class="speaker">You</div>
+            <div class="original" id="myCaption">Speak to see captions...</div>
+            <div class="translated" id="myTranslation"></div>
+          </div>
+          <div class="caption-item peer" id="peerCaptionItem" style="display:none;">
+            <div class="speaker" id="peerCaptionName">Peer</div>
+            <div class="original" id="peerCaption"></div>
+            <div class="translated" id="peerTranslation"></div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- Control Bar -->
+    <footer class="control-bar">
+      <button class="control-btn default" id="micBtn" title="Toggle Microphone">
+        <i class="fas fa-microphone"></i>
+      </button>
+      
+      <button class="control-btn default" id="cameraBtn" title="Toggle Camera">
+        <i class="fas fa-video"></i>
+      </button>
+      
+      <div class="control-divider"></div>
+      
+      <button class="control-btn default" id="screenBtn" title="Share Screen">
+        <i class="fas fa-display"></i>
+      </button>
+      
+      <button class="control-btn leave" id="leaveBtn">
+        <i class="fas fa-phone-slash"></i>
+        Leave
+      </button>
+    </footer>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
 
   <script src="app.js"></script>
 </body>
