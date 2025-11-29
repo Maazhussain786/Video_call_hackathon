@@ -47,6 +47,10 @@ rooms: Dict[str, dict] = {}
 # Translation cache
 translation_cache: Dict[str, str] = {}
 
+# DeepL API Key (Free tier)
+DEEPL_API_KEY = "6ef3f2c2-2a1a-4311-90e1-8461b73bcf0a:fx"
+DEEPL_API_URL = "https://api-free.deepl.com/v2/translate"
+
 
 class TranslationRequest(BaseModel):
     text: str
@@ -260,8 +264,11 @@ async def websocket_endpoint(websocket: WebSocket, room_id: str):
 
 
 # ============================================================
-# Translation API
+# Translation API - DeepL (primary) + MyMemory (fallback)
 # ============================================================
+# DeepL supported languages (doesn't support Urdu, Hindi, Arabic)
+DEEPL_SUPPORTED = {"en", "de", "fr", "es", "it", "nl", "pl", "pt", "ru", "ja", "zh", "ko", "bg", "cs", "da", "el", "et", "fi", "hu", "id", "lt", "lv", "nb", "ro", "sk", "sl", "sv", "tr", "uk"}
+
 @app.post("/translate")
 async def translate(req: TranslationRequest):
     cache_key = f"{req.text}|{req.source_lang}|{req.target_lang}"
@@ -269,26 +276,63 @@ async def translate(req: TranslationRequest):
         return {"translated": translation_cache[cache_key]}
     
     translated_text = None
+    source_lang = req.source_lang.lower()
+    target_lang = req.target_lang.lower()
     
-    try:
-        encoded_text = urllib.parse.quote(req.text)
-        url = f"https://api.mymemory.translated.net/get?q={encoded_text}&langpair={req.source_lang}|{req.target_lang}"
+    # Use DeepL if both languages are supported, otherwise use MyMemory
+    use_deepl = source_lang in DEEPL_SUPPORTED and target_lang in DEEPL_SUPPORTED
+    
+    async with httpx.AsyncClient(timeout=8.0) as client:
+        if use_deepl:
+            # DeepL API
+            try:
+                response = await client.post(
+                    DEEPL_API_URL,
+                    headers={
+                        "Authorization": f"DeepL-Auth-Key {DEEPL_API_KEY}",
+                        "Content-Type": "application/json"
+                    },
+                    json={
+                        "text": [req.text],
+                        "target_lang": target_lang.upper(),
+                        "source_lang": source_lang.upper()
+                    }
+                )
+                
+                if response.status_code == 200:
+                    data = response.json()
+                    translations = data.get("translations", [])
+                    if translations:
+                        translated_text = translations[0].get("text", req.text)
+                        print(f"DeepL: '{req.text}' -> '{translated_text}'")
+                else:
+                    print(f"DeepL error: {response.status_code}")
+            except Exception as e:
+                print(f"DeepL error: {e}")
         
-        async with httpx.AsyncClient(timeout=5.0) as client:
-            response = await client.get(url)
-            
-            if response.status_code == 200:
-                data = response.json()
-                if data.get("responseStatus") == 200:
-                    translated_text = data.get("responseData", {}).get("translatedText", req.text)
-                    translation_cache[cache_key] = translated_text
-                    
-                    if len(translation_cache) > 500:
-                        keys = list(translation_cache.keys())[:100]
-                        for k in keys:
-                            del translation_cache[k]
-    except Exception as e:
-        print(f"Translation error: {e}")
+        # Fallback to MyMemory for unsupported languages (Urdu, Hindi, Arabic, etc.)
+        if translated_text is None:
+            try:
+                encoded_text = urllib.parse.quote(req.text)
+                url = f"https://api.mymemory.translated.net/get?q={encoded_text}&langpair={source_lang}|{target_lang}"
+                
+                response = await client.get(url)
+                
+                if response.status_code == 200:
+                    data = response.json()
+                    if data.get("responseStatus") == 200:
+                        translated_text = data.get("responseData", {}).get("translatedText", req.text)
+                        print(f"MyMemory: '{req.text}' -> '{translated_text}'")
+            except Exception as e:
+                print(f"MyMemory error: {e}")
+    
+    # Cache successful translations
+    if translated_text and translated_text != req.text:
+        translation_cache[cache_key] = translated_text
+        if len(translation_cache) > 500:
+            keys = list(translation_cache.keys())[:100]
+            for k in keys:
+                del translation_cache[k]
     
     return {"translated": translated_text or req.text}
 
